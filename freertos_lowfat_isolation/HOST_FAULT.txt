@@ -1,0 +1,1 @@
+PASS: expected fault accepted; 23 wrong-context/fault/frame cases rejected

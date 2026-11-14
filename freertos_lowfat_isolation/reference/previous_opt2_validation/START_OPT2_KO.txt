@@ -1,0 +1,86 @@
+추가 최적화 후보: freertos_lowfat_opt2
+===================================
+
+이 파일부터 읽으세요. 이전 freertos_lowfat_opt 프로젝트는 수정하지 않았습니다.
+보드 성능 향상과 1.3~1.5배 달성 여부는 아직 측정하지 않았습니다.
+
+추가로 바뀐 부분
+1. lowfat_config_stm32.c: 고정 13개 크기 클래스의 반복 검색을
+   작은 크기는 산술 계산, 큰 크기는 분기로 대체했습니다.
+   모든 요청 크기에서 기존 선택 결과와 동일합니다.
+2. lowfat_mcu.c: lowfat_malloc_index에서 검증한 클래스를 다시 찾지 않고
+   그대로 할당합니다. 검증/뮤텍스/할당 메타데이터는 유지합니다.
+3. port.c + bench_frame_copy.h: 시스템 호출 진입/복귀 때 일반적인
+   8워드 실행 상태 복사를 반복문 대신 펼친 코드로 처리합니다.
+   26워드 FPU 상태는 기존 루프를 유지합니다. SVC 검증, 권한, 스택 한계,
+   FPU lazy stacking, 정렬 처리는 바꾸지 않았습니다.
+
+MPU 영역 설정과 portasm.c는 변경하지 않았습니다.
+PUB/SUB worker는 여전히 MPU ON에서 비특권으로 자기 객체와 스택만 접근합니다.
+알림/태스크 전환 횟수, 검사 횟수, 10회 준비 + 100회 측정은 동일합니다.
+기존 -O2 설정과 micro-ROS 정적 라이브러리는 유지했습니다.
+SFI를 적용한 버전은 아닙니다.
+
+CubeIDE에 넣기
+1. ZIP을 짧은 경로 C:\lf2 에 해제합니다.
+2. File > Import > General > Existing Projects into Workspace.
+3. C:\lf2\freertos_lowfat_opt2 선택.
+   Copy projects into workspace 체크를 해제하면 아래 명령 경로와 일치합니다.
+4. freertos_lowfat_opt2 프로젝트의 Debug 구성을 선택합니다.
+5. Core/Inc/benchmark_config.h에서 아래 세 값을 바꿉니다.
+
+   #define BENCH_FAST_PATHS 1   // 0: 추가 개선 OFF, 1: 추가 개선 ON
+   #define BENCH_MODE 1         // 0: 기본, 1: LowFat, 2: LowFat+MPU
+   #define BENCH_SUBSCRIBERS 4  // 1~4
+
+6. 저장 > Project > Clean > Build Project. 오류 0개와 -O2를 확인합니다.
+
+권장 비교 순서 (SUB=4 고정)
+  FAST=0, MODE=1
+  FAST=0, MODE=2
+  FAST=1, MODE=1
+  FAST=1, MODE=2
+각 설정을 바꿀 때마다 Clean/Build 후 새 ELF를 기록해야 합니다.
+과거 로그 하나와 비교하기보다 네 조합을 같은 환경에서 반복하세요.
+가능하면 각 조합을 5번 이상 실행하고 평균값들의 중앙값을 비교하세요.
+FAST=0은 이전 구현의 알고리즘 경로이며, 프로젝트 재링크 때문에 과거 ELF와
+주소/배치/기계어가 완전히 같다는 뜻은 아닙니다.
+
+실행 (기존 bridge/link/agent가 실행 중이면 중복으로 시작하지 마세요)
+아래 각 실행 창에서 먼저 실행:
+  Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+
+창 1:
+  & "C:\lf2\freertos_lowfat_opt2\1_start_bridge.ps1"
+창 2:
+  & "C:\lf2\freertos_lowfat_opt2\3_start_link.ps1"
+창 3:
+  & "C:\lf2\freertos_lowfat_opt2\4_start_agent.ps1"
+창 4:
+  & "C:\lf2\freertos_lowfat_opt2\2_flash_and_rtt.ps1"
+
+다음 빌드를 기록하기 전 RTT 창만 Ctrl+C로 종료하세요.
+CubeIDE에서 Copy projects into workspace를 켰다면 그쪽 ELF를 지정하세요:
+  & "C:\lf2\freertos_lowfat_opt2\2_flash_and_rtt.ps1" -Firmware "실제로_빌드한_프로젝트\Debug\freertos_lowfat_opt2.elf"
+
+로그 확인
+  [BUILD] variant=lowfat_opt2 compiler_optimized=1
+  [OPT2] fast_paths=1 (0=previous, 1=optimized)
+  [LOWFAT SELFTEST] ... PASS
+  [COMPARE] mode=... MPU=... subscribers=4 ...
+  ... received=100/100 / 각 errors=0 ...
+  [BENCH DONE] ... valid=YES
+
+비교할 항목
+- alloc_check_free: LowFat 할당/검사/해제 구간 개선 확인
+- sub_workers_total: SUB 처리 왕복 비용, 특히 MODE=2 비교
+- worker_roundtrip: PUB 처리 왕복 비용
+- MPU 추가 비용: 같은 FAST 값에서 MODE=2 - MODE=1
+- MPU 비율: 같은 FAST 값에서 MODE=2 / MODE=1
+통신을 포함한 iteration_total은 PC/Agent 대기 변동이 커서 보조 지표입니다.
+검사 자체를 제거하거나 측정 범위를 줄여서 숫자를 낮추지 않았습니다.
+
+검증 범위
+호스트 동등성/메모리 검사와 CubeIDE 빌드는 BUILD_VALIDATION_OPT2.txt 참고.
+실제 MPU 하드웨어 차단 및 UART/Agent 통신, 실행 시간은 보드에서 확인해야 합니다.
+문제가 발생하면 BENCH_FAST_PATHS=0으로 재빌드해 동일 환경에서 비교하세요.

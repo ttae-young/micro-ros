@@ -1,0 +1,32 @@
+Build/host/ELF validation; board not executed.
+mode0_sub4_checks0: 94088	    272	 165616	 259976	  3f788	freertos_lowfat_isolation.elf
+mode1_sub4_checks0: 96872	    272	 166808	 263952	  40710	freertos_lowfat_isolation.elf
+mode2_sub1_checks0: 124104	  68012	  99264	 291380	  47234	freertos_lowfat_isolation.elf
+mode1_sub4_checks1: 96968	    272	 166808	 264048	  40770	freertos_lowfat_isolation.elf
+mode2_sub4_checks1: 124648	  68012	 105072	 297732	  48b04	freertos_lowfat_isolation.elf
+mode2_sub4_checks0: 124552	  68012	 105072	 297636	  48aa4	freertos_lowfat_isolation.elf
+
+ELF: one LDR at probe site; return label +2 bytes; PUB calls probe and MPU_ulTaskGenericNotifyTake.
+ELF: g_probe in privileged SRAM; bench_fast_notify in privileged flash.
+
+HOST_ALLOCATOR.txt
+reuse: a=0x60ac66225000 b=0x60ac66225010 c=0x60ac66226000 d=0x60ac66225000 (a == d)
+PASS: all configured sizes, alignment and interior-pointer geometry
+PASS: every region exhausted, data intact, tail excluded, recovered
+PASS: calloc and realloc preserve data; failed realloc keeps original
+PASS: invalid/double free rejected; no live allocations
+PASS: exact requested-size bounds reject over-read/write
+PASS: MCU-compatible extra allocation APIs
+HOST PASS: functional tests + 4 threads / 40000 allocations
+ADAPTER PASS: MPU slot alignment, calloc/realloc/free, overflow, no fallback
+Test executables: /tmp/lowfat-tests.MaQTZU
+DIFFERENTIAL PASS: all pool offsets and 10000 allocator operations match original semantics
+PASS size-class equivalence, overflow rejection, frame copy (8/26 words + canaries)
+PASS size-class equivalence, overflow rejection, frame copy (8/26 words + canaries)
+
+HOST_WORKER.txt
+WORKER HOST PASS: slot bounds, missing/duplicate creation, unprivileged flag, handle routing and notification arguments
+WORKER HOST PASS: slot bounds, missing/duplicate creation, unprivileged flag, handle routing and notification arguments
+
+HOST_FAULT.txt
+PASS: expected fault accepted; 23 wrong-context/fault/frame cases rejected

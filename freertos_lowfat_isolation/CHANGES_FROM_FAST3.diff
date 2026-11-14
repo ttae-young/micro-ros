@@ -1,0 +1,296 @@
+--- fast3/Core/Src/freertos_mpu_demo.c
++++ isolation/Core/Src/freertos_mpu_demo.c
+@@ -1,5 +1,6 @@
+-/* Three-mode benchmark; original code preserved under reference/.
+- * Normal communication only: no deliberate faults, no per-sample RTT. */
++/* Core experiment: normal micro-ROS communication and actual unprivileged
++ * PUB -> SUB reads. Expected faults are tested OUTSIDE measured iterations.
++ * Objects/tasks have static lifetime; no message batching or privilege widening. */
+ #include "main.h"
+ #include "FreeRTOS.h"
+ #include "task.h"
+@@ -9,6 +10,7 @@
+ #include "bench_allocator.h"
+ #include "lowfat_malloc.h"
+ #include "bench_fast_worker.h"
++#include "isolation_fault.h"
+ #include <rcl/rcl.h>
+ #include <rclc/rclc.h>
+ #include <rclc/executor.h>
+@@ -49,7 +51,7 @@
+ 
+ _Static_assert(sizeof(publisher_region_t) <= BENCH_OBJECT_BYTES, "PUB exceeds MPU slot");
+ _Static_assert(sizeof(subscriber_region_t) <= BENCH_OBJECT_BYTES, "SUB exceeds MPU slot");
+-static statistics_t g_alloc_stats, g_bounds_stats, g_iteration_stats;
++static statistics_t g_bounds_stats, g_iteration_stats;
+ static uint32_t g_init_cycles, g_ros_alloc_calls;
+ static void create_workers(void);
+ static publisher_region_t *g_pub;
+@@ -150,28 +152,83 @@
+     SEGGER_RTT_WriteString(0, "[LOWFAT SELFTEST] base/size/bounds/realloc/free PASS\n");
+ #endif
+ }
+-static void allocation_sample(bool measured)
+-{
+-    uint32_t start = cycles();
+-    void *p = microros_allocate(BENCH_ALLOC_BYTES, NULL);
+-    if (!p) fatal("sample allocation", BENCH_ALLOC_BYTES);
+-    guard(p, BENCH_ALLOC_BYTES, measured);
+-    memset(p, 0x5a, BENCH_ALLOC_BYTES);
+-    /* Make the write observable even in optimized builds. */
+-    __asm volatile("" : : "r"(p) : "memory");
+-    microros_deallocate(p, NULL);
+-    uint32_t elapsed = cycles() - start;
+-    if (measured) add(&g_alloc_stats, elapsed);
+-}
+-/* Identical benign work in every mode. Mode 2 grants PUB + own stack only.
+- * This task never calls RTT or accesses DWT/the SUB object. */
++/* A probe command is used only outside normal traffic. Its address is passed
++ * through PUB-owned memory; the worker cannot read the service's g_sub array.
++ * The normal positive sequence numbers can never equal this command. */
++#define PROBE_COMMAND INT32_MIN
++#define PROBE_BLOCKED (INT32_MIN + 1)
++typedef struct {
++    volatile uint32_t armed, blocked, target, fault_pc, cfsr, control;
++} probe_state_t;
++static probe_state_t g_probe PRIVILEGED_DATA;
++static uint32_t g_probe_passes;
++extern const unsigned char isolation_load_site[], isolation_resume_site[];
++/* r1 retains the exact target; r2 captures the caller privilege before fault.
++ * A single, known load is the ONLY instruction that may be recovered. */
++__attribute__((naked, noinline, used)) static int32_t isolation_read(const void *address __attribute__((unused)))
++{
++    __asm volatile(
++        "mov r1, r0\n"
++        "mrs r2, control\n"
++        ".global isolation_load_site\n"
++        "isolation_load_site: ldr r0, [r1]\n"
++        ".global isolation_resume_site\n"
++        "isolation_resume_site: bx lr\n");
++}
+ static void publisher_worker_task(void *argument)
+ {
+     publisher_region_t *pub = argument;
+     for (;;) {
+         (void)ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+-        pub->worker_value = pub->message.data;
+-    }
++        if (pub->worker_value == PROBE_COMMAND)
++            pub->worker_value = isolation_read((const void *)(uintptr_t)(uint32_t)pub->message.data);
++        else
++            pub->worker_value = pub->message.data;
++    }
++}
++static void notify_publisher(void)
++{
++#if BENCH_OPT3 && BENCH_MPU_ENABLED
++    if (!bench_fast_notify(0U)) fatal("PUB notify", 0);
++#else
++    xTaskNotifyGive(g_worker);
++#endif
++}
++/* Called with the executor stopped, after actual messages have been received.
++ * Targets every subscriber, before AND after timing; no probe in timing. */
++static void isolation_test(const char *phase)
++{
++    int32_t saved = g_pub->message.data;
++    for (uint32_t i = 0; i < BENCH_SUBSCRIBERS; ++i) {
++        if (SCB->CFSR || SCB->HFSR) fatal("stale fault status", 0);
++        int32_t expected = g_sub[i]->message.data;
++        g_probe.target = (uint32_t)(uintptr_t)&g_sub[i]->message.data;
++        g_probe.blocked = g_probe.fault_pc = g_probe.cfsr = g_probe.control = 0;
++        g_pub->message.data = (int32_t)g_probe.target;
++        g_pub->worker_value = PROBE_COMMAND;
++        g_probe.armed = 1;
++        __DMB();
++        notify_publisher();
++        __DMB();
++        g_probe.armed = 0;
++        bool ok = BENCH_MPU_ENABLED ?
++            (g_probe.blocked == 1U && g_pub->worker_value == PROBE_BLOCKED) :
++            (g_probe.blocked == 0U && g_pub->worker_value == expected);
++        if (g_sub[i]->message.data != expected) ok = false;
++        SEGGER_RTT_printf(0, "[ISOLATION %s] PUB -> SUB%u address=0x%08lx %s result=%s\n",
++            phase, i+1U, (unsigned long)g_probe.target,
++            g_probe.blocked ? "BLOCKED BY MPU" : "READ ALLOWED",
++            ok ? "PASS" : "FAIL");
++        if (!g_probe.blocked)
++            SEGGER_RTT_printf(0, "  read_value=%ld SUB_message=%ld\n", (long)g_pub->worker_value, (long)expected);
++        if (g_probe.blocked)
++            SEGGER_RTT_printf(0, "  fault_PC=0x%08lx CFSR=0x%08lx caller_CONTROL=0x%08lx\n",
++                (unsigned long)g_probe.fault_pc, (unsigned long)g_probe.cfsr, (unsigned long)g_probe.control);
++        if (!ok) fatal("isolation test", (int32_t)i);
++        ++g_probe_passes;
++    }
++    g_pub->message.data = saved;
++    g_pub->worker_value = saved;
+ }
+ static void subscriber_worker_task(void *argument)
+ {
+@@ -187,7 +244,9 @@
+     uint32_t i;
+     for (i = 0; i < BENCH_SUBSCRIBERS; ++i)
+         if (received == &g_sub[i]->message) break;
++#if BENCH_VALIDATE_EACH_MESSAGE
+     if (i < BENCH_SUBSCRIBERS) guard(g_sub[i], BENCH_OBJECT_BYTES, g_measured);
++#endif
+     if (i == BENCH_SUBSCRIBERS || !g_waiting || received->data != g_sequence || (g_seen & (1U << i))) {
+         g_unexpected_rx++;
+         return;
+@@ -215,16 +274,13 @@
+ static void run_one(bool measured)
+ {
+     uint32_t iteration_start = cycles();
+-    allocation_sample(measured);
++#if BENCH_VALIDATE_EACH_MESSAGE
+     guard(g_pub, BENCH_OBJECT_BYTES, measured);
++#endif
+     g_pub->message.data = ++g_sequence;
+     g_pub->worker_value = -1;
+     uint32_t start = cycles();
+-#if BENCH_OPT3 && BENCH_MPU_ENABLED
+-    if (!bench_fast_notify(0U)) fatal("PUB notify", 0);
+-#else
+-    xTaskNotifyGive(g_worker);
+-#endif
++    notify_publisher();
+     /* Higher priority worker finishes and blocks before this caller resumes. */
+     uint32_t worker_cycles = cycles() - start;
+     if (g_pub->worker_value != g_sequence) g_worker_errors++;
+@@ -265,9 +321,9 @@
+ {
+     (void)argument;
+ #ifdef __OPTIMIZE__
+-    SEGGER_RTT_WriteString(0, "[BUILD] variant=lowfat_fast3 compiler_optimized=1\n");
+-#else
+-    SEGGER_RTT_WriteString(0, "[BUILD] variant=lowfat_fast3 compiler_optimized=0\n");
++    SEGGER_RTT_WriteString(0, "[BUILD] variant=lowfat_isolation compiler_optimized=1\n");
++#else
++    SEGGER_RTT_WriteString(0, "[BUILD] variant=lowfat_isolation compiler_optimized=0\n");
+ #endif
+     if (((MPU->CTRL & MPU_CTRL_ENABLE_Msk) != 0U) != (BENCH_MPU_ENABLED != 0))
+         fatal("MPU state does not match mode", (int32_t)MPU->CTRL);
+@@ -286,7 +342,22 @@
+     if (!g_pub) fatal("PUB allocation", 0);
+     for (uint32_t i = 0; i < BENCH_SUBSCRIBERS; ++i)
+         if (!g_sub[i]) fatal("SUB allocation", (int32_t)i);
++    /* Validate live allocations once before creating workers. Their addresses,
++     * sizes and lifetime are immutable until reset. No freeing/reallocation. */
++    guard(g_pub, BENCH_OBJECT_BYTES, false);
++    for (uint32_t i = 0; i < BENCH_SUBSCRIBERS; ++i) {
++        guard(g_sub[i], BENCH_OBJECT_BYTES, false);
++        uintptr_t a = (uintptr_t)g_pub, b = (uintptr_t)g_sub[i];
++        if (!(a + BENCH_OBJECT_BYTES <= b || b + BENCH_OBJECT_BYTES <= a))
++            fatal("PUB/SUB overlap", (int32_t)i);
++        for (uint32_t j = 0; j < i; ++j) {
++            uintptr_t c = (uintptr_t)g_sub[j];
++            if (!(c + BENCH_OBJECT_BYTES <= b || b + BENCH_OBJECT_BYTES <= c))
++                fatal("SUB/SUB overlap", (int32_t)i);
++        }
++    }
+     create_workers();
++    SEGGER_RTT_printf(0, "[CORE] repeated_bounds=%d synthetic_alloc=0 probe_outside_timing=1\n", BENCH_VALIDATE_EACH_MESSAGE);
+     SEGGER_RTT_printf(0, "\n[COMPARE] mode=%d LowFat=%d MPU=%d subscribers=%d CPU_Hz=%lu warmup=%u samples=%u\n",
+         BENCH_MODE, BENCH_LOWFAT_ENABLED, BENCH_MPU_ENABLED, BENCH_SUBSCRIBERS,
+         (unsigned long)SystemCoreClock, BENCH_WARMUP, BENCH_SAMPLES);
+@@ -333,11 +404,13 @@
+     vTaskDelay(pdMS_TO_TICKS(BENCH_DISCOVERY_MS));
+     SEGGER_RTT_WriteString(0, "[BENCH] Running warmup + samples; no per-message RTT output.\n");
+     for (uint32_t i = 0; i < BENCH_WARMUP; ++i) run_one(false);
+-    uint32_t warmup_errors = g_publish_errors + g_timeouts + g_worker_errors + g_spin_errors;
++    uint32_t warmup_errors = g_publish_errors + g_timeouts + g_worker_errors + g_spin_errors + g_unexpected_rx;
++    if (warmup_errors || g_seen != ALL_SUBS_MASK) fatal("communication before isolation", (int32_t)warmup_errors);
++    isolation_test("PRE");
+     g_publish_errors = g_timeouts = g_worker_errors = g_spin_errors = g_unexpected_rx = 0;
+     for (uint32_t i = 0; i < BENCH_SAMPLES; ++i) run_one(true);
+     SEGGER_RTT_WriteString(0, "\nCSV,mode,subscribers,metric,count,min_cycles,mean_cycles,max_cycles,mean_us\n");
+-    print_stat("alloc_check_free", &g_alloc_stats);
++
+     print_stat("iteration_total", &g_iteration_stats);
+     print_stat("bounds_check", &g_bounds_stats);
+     print_stat("worker_roundtrip", &g_worker_stats);
+@@ -357,9 +430,14 @@
+         (unsigned long)total.allocate_calls, (unsigned long)total.calloc_calls, (unsigned long)total.realloc_calls,
+         (unsigned long)total.free_calls, (unsigned long)total.failures, (unsigned long)total.invalid_frees,
+         (unsigned long)total.max_request);
+-    bool valid = !warmup_errors && !total.failures && !total.invalid_frees &&
+-        g_alloc_stats.n == BENCH_SAMPLES && g_iteration_stats.n == BENCH_SAMPLES &&
+-        g_bounds_stats.n == (BENCH_LOWFAT_ENABLED ? BENCH_SAMPLES * (BENCH_SUBSCRIBERS + 2U) : 0U) &&
++    isolation_test("POST");
++    /* A real normal exchange after the last fault must still work. */
++    run_one(false);
++    SEGGER_RTT_printf(0, "[RECOVERY] normal_exchange=%s\n",
++        (g_received && g_seen == ALL_SUBS_MASK && !g_worker_errors && !g_timeouts && !g_publish_errors && !g_spin_errors && !g_unexpected_rx) ? "PASS" : "FAIL");
++    bool valid = g_probe_passes == 2U * BENCH_SUBSCRIBERS && !warmup_errors && !total.failures && !total.invalid_frees &&
++        g_iteration_stats.n == BENCH_SAMPLES &&
++        g_bounds_stats.n == (BENCH_LOWFAT_ENABLED && BENCH_VALIDATE_EACH_MESSAGE ? BENCH_SAMPLES * (BENCH_SUBSCRIBERS + 1U) : 0U) &&
+         !g_publish_errors && !g_timeouts && !g_worker_errors && !g_spin_errors &&
+         !g_unexpected_rx && g_e2e_stats.n == BENCH_SAMPLES;
+     for (uint32_t i = 0; i < BENCH_SUBSCRIBERS; ++i)
+@@ -430,11 +508,45 @@
+     }
+ 
+ }
+-/* No faults are expected: never skip arbitrary instructions in a benchmark. */
++/* Recover ONLY the armed PUB read probe. All other faults invalidate the run. */
+ void BenchmarkFault(uint32_t *frame, uint32_t exc_return) __attribute__((used, noinline));
+ void BenchmarkFault(uint32_t *frame, uint32_t exc_return)
+ {
+-    if ((exc_return & (1U << 4)) == 0U) frame += 18;
++    /* Cortex-M core frame is r0-r3,r12,lr,pc,xPSR at SP (also when FP
++     * extension follows it). Only a basic frame is accepted for this integer probe. */
++#if BENCH_MPU_ENABLED
++    extern TaskHandle_t pxCurrentTCB;
++    uintptr_t sp = (uintptr_t)frame;
++    uintptr_t lo = (uintptr_t)g_worker_stack;
++    uintptr_t hi = lo + sizeof(g_worker_stack);
++    bool recover = false;
++    if (isolation_stack_valid(sp, lo, hi)) {
++        const isolation_fault_info_t f = {
++            .sp=sp, .stack_begin=lo, .stack_end=hi,
++            .task=(uintptr_t)pxCurrentTCB, .publisher_task=(uintptr_t)&g_worker_tcb,
++            .exception=__get_IPSR(), .exc_return=exc_return,
++            .armed=g_probe.armed, .blocked=g_probe.blocked,
++            .cfsr=SCB->CFSR, .hfsr=SCB->HFSR, .fault_address=SCB->MMFAR,
++            .target=g_probe.target, .pc=frame[6], .load_pc=(uintptr_t)isolation_load_site,
++            .address_register=frame[1], .control=frame[2], .xpsr=frame[7]
++        };
++        recover = isolation_fault_matches(&f);
++    }
++    if (recover) {
++        g_probe.blocked = 1;
++        g_probe.fault_pc = frame[6];
++        g_probe.cfsr = SCB->CFSR;
++        g_probe.control = frame[2];
++        g_probe.armed = 0;
++        frame[0] = (uint32_t)PROBE_BLOCKED;
++        frame[6] = (uintptr_t)isolation_resume_site & ~1U;
++        SCB->CFSR = 0x82U; /* W1C DACCVIOL + MMARVALID; never clear unrelated faults. */
++        __DSB(); __ISB();
++        return;
++    }
++#else
++    (void)exc_return;
++#endif
+     SEGGER_RTT_printf(0, "\n[BENCH INVALID: FAULT] PC=0x%08lx CFSR=0x%08lx HFSR=0x%08lx MMFAR=0x%08lx\n",
+         (unsigned long)frame[6], (unsigned long)SCB->CFSR,
+         (unsigned long)SCB->HFSR, (unsigned long)SCB->MMFAR);
+--- fast3/Core/Inc/benchmark_config.h
++++ isolation/Core/Inc/benchmark_config.h
+@@ -35,6 +35,16 @@
+ #endif
+ #define BENCH_MPU_ENABLED (BENCH_MODE == 2)
+ #define BENCH_LOWFAT_ENABLED (BENCH_MODE != 0)
++/* Objects live for the whole run. 0 validates them once before worker use;
++ * 1 repeats the same checks at every service/worker boundary for comparison.
++ * Neither setting changes hardware MPU permissions. No synthetic allocation
++ * is included in the communication benchmark in this project. */
++#ifndef BENCH_VALIDATE_EACH_MESSAGE
++#define BENCH_VALIDATE_EACH_MESSAGE 0
++#endif
++#if BENCH_VALIDATE_EACH_MESSAGE != 0 && BENCH_VALIDATE_EACH_MESSAGE != 1
++#error "BENCH_VALIDATE_EACH_MESSAGE must be 0 or 1"
++#endif
+ #define BENCH_OBJECT_BYTES 32U
+ #define BENCH_ALLOC_BYTES 48U
+ /* One publisher node + one node owning N independent subscriptions.

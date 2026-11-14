@@ -1,0 +1,13 @@
+reuse: a=0x60ac66225000 b=0x60ac66225010 c=0x60ac66226000 d=0x60ac66225000 (a == d)
+PASS: all configured sizes, alignment and interior-pointer geometry
+PASS: every region exhausted, data intact, tail excluded, recovered
+PASS: calloc and realloc preserve data; failed realloc keeps original
+PASS: invalid/double free rejected; no live allocations
+PASS: exact requested-size bounds reject over-read/write
+PASS: MCU-compatible extra allocation APIs
+HOST PASS: functional tests + 4 threads / 40000 allocations
+ADAPTER PASS: MPU slot alignment, calloc/realloc/free, overflow, no fallback
+Test executables: /tmp/lowfat-tests.MaQTZU
+DIFFERENTIAL PASS: all pool offsets and 10000 allocator operations match original semantics
+PASS size-class equivalence, overflow rejection, frame copy (8/26 words + canaries)
+PASS size-class equivalence, overflow rejection, frame copy (8/26 words + canaries)

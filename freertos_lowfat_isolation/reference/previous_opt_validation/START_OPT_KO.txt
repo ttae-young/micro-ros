@@ -1,0 +1,91 @@
+기능 유지 최적화 후보 — freertos_lowfat_opt2
+==================================================
+
+목표
+LowFat+MPU ON/OFF worker 비용 차이를 줄입니다.
+1.3~1.5배는 보드에서 확인할 목표이며, 달성했다고 주장하지 않습니다.
+기존 freertos_lowfat_compare는 수정하지 않았습니다.
+
+바뀐 것 (두 가지)
+1. 모든 모드를 Debug -O0 대신 Debug -O2로 컴파일합니다.
+   디버그 정보와 configASSERT는 유지합니다. LTO는 켜지 않았습니다.
+   기존 libmicroros.a는 그대로이며 다시 컴파일하지 않습니다.
+2. lowfat_mcu.c의 주소 해석을 한 번 수행해 region/slot/base 계산에 재사용합니다.
+   풀 범위, 클래스 끝의 사용 불가능한 공간, 정확한 요청 크기, 살아 있는 할당,
+   올바른 시작 주소인지 검사하는 조건은 그대로 유지합니다.
+
+유지한 것
+- MPU ON에서 비특권 PUB/SUB worker와 자기 32바이트 객체/자기 스택 권한.
+- 기존 FreeRTOS port.c/portasm.c, wrapper, kernel 코드와 보안 검사.
+- 매 메시지마다 task notification으로 worker를 실행하는 구조.
+- worker의 읽기/복사 작업 및 통신/콜백 처리.
+- LowFat mutex, 동시 접근 보호, free/realloc 검증, no-fallback 정책.
+- 검사 횟수, 타이머/통계, 10회 준비 실행 + 100회 측정.
+- 원본과 동일한 32바이트 객체 및 52KiB LowFat 풀, CPU 110MHz 설정.
+검사를 제거하거나 worker를 privileged로 만들거나 대기 시간을 넣지 않았습니다.
+메시지를 여러 개 묶는 batching도 하지 않았습니다.
+
+중복 주소 계산 개선은 guard/allocator 구간에 영향을 줍니다.
+SUB worker 합산 구간에는 guard 시간이 포함되지 않으므로,
+그 구간의 개선은 주로 컴파일 최적화에 의해 결정될 것입니다.
+MPU를 켤 때 필요한 시스템 호출/문맥 전환/레지스터 설정 비용은 남습니다.
+O2로 OFF 시간도 줄어들 수 있으므로 ON/OFF 비율이 반드시 내려가지는 않습니다.
+실행 시간은 빨라졌지만 비율은 높아지는 경우도 있습니다.
+
+실행
+1. ZIP을 C:\lf에 해제.
+2. CubeIDE Import → Existing Projects into Workspace:
+   C:\lf\freertos_lowfat_opt2
+   Copy projects into workspace 체크 해제.
+3. 프로젝트 freertos_lowfat_opt2, Debug 구성 선택.
+   이 프로젝트의 Debug는 O2 설정입니다.
+4. 초기 설정: Core/Inc/benchmark_config.h
+   #define BENCH_MODE 1
+   #define BENCH_SUBSCRIBERS 4
+5. Clean → Build. 컴파일 명령에 -O2 확인.
+6. 기존 bridge/link/agent 창은 유지. 기존 RTT만 Ctrl+C.
+7. RTT용 PowerShell에서:
+   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+   & "C:\lf\freertos_lowfat_opt2\2_flash_and_rtt.ps1"
+8. 시작 로그:
+   [BUILD] variant=lowfat_opt compiler_optimized=1
+   [COMPARE] mode=1 LowFat=1 MPU=0 subscribers=4
+   모든 SUB 100/100, 오류 0, valid=YES 확인.
+9. MODE만 2로 변경. Clean/Build → 같은 스크립트 실행.
+   [COMPARE] mode=2 LowFat=1 MPU=1 subscribers=4 확인.
+
+workspace로 복사했다면 해당 ELF 경로를 명시:
+& "C:\lf\freertos_lowfat_opt2\2_flash_and_rtt.ps1" -Firmware "C:\Users\YTY\STM32CubeIDE\workspace_2.2.0\freertos_lowfat_opt2\Debug\freertos_lowfat_opt2.elf"
+
+새 연결이 필요한 경우 bridge/link/agent 명령은 README_KO.txt 참고.
+CubeIDE에서 원본 프로젝트를 잘못 빌드하지 않도록 프로젝트 이름 확인.
+
+판정 방법
+같은 최적화 버전에서 MODE1/OFF와 MODE2/ON을 모두 다시 측정합니다.
+원본 O0 OFF와 최적화 O2 ON만 비교하면 최적화와 MPU 효과가 섞입니다.
+SUB worker 합산(sub_workers_total)의:
+- ON/OFF 배율 = ON 시간 / OFF 시간
+- 추가 비용 = ON 시간 - OFF 시간
+- ON 자체 시간의 감소도 함께 확인
+OFF를 인위적으로 느리게 해 비율을 맞추지 않습니다.
+
+기존 실측 SUB 4개 (O0):
+OFF = 62.936us, ON = 151.963us, 차이 = 89.027us, 배율 약 2.415.
+1.3~1.5배 목표는 새 O2 OFF 측정값을 기준으로 다시 계산합니다.
+예: 기존 OFF가 그대로라면 목표 ON은 81.817~94.404us이지만,
+최적화 후 OFF도 변하므로 이 숫자가 새 합격 기준은 아닙니다.
+
+MODE1→MODE2를 한 묶음으로 5회 반복하고 모든 결과를 기록하세요.
+낮은 값만 선택하지 마세요. 평균/실행 간 변동도 함께 비교하세요.
+전체 iteration_total은 통신·Agent·대기 영향을 받으므로
+worker 오버헤드 목표 판정과 별도 표시하세요.
+SUB 4개에서 개선 확인 후 1~3개도 같은 방법으로 측정하세요.
+
+검증
+BUILD_VALIDATION_OPT.txt에 빌드/호스트 검증 기록.
+tests/lowfat_before.c: 사용자 프로젝트에서 복사한 최적화 전 소스.
+tests/differential_test.c: 원본과 모든 풀 바이트의 주소/경계 조회 결과,
+1만 회 재할당/해제/실패 결과와 데이터 보존 비교.
+동시 할당 4스레드/4만 회 및 실제 adapter 테스트.
+보드 실행 시간, 하드웨어 경계 차단은 새 펌웨어를 올려 확인해야 합니다.
+이 문서에는 최적화 후 실측값이나 목표 달성 주장이 없습니다.

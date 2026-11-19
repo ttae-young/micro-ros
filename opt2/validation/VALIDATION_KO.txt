@@ -1,0 +1,30 @@
+검증 일자: 2026-11-19 / freertos_app_direct
+
+CubeIDE Debug: MODE1/2 모두 0 errors, 0 warnings, APP VERIFY PASS.
+보드: STM32L552 / Cortex-M33 / 110MHz / COM7 micro-ROS Agent.
+순서: OFF, ON, ON, OFF. 각 실행 warmup10 + 측정100 + 복구1.
+4회 모두 valid=YES, 각 SUB 100/100 수신, 모든 오류 0.
+각 ON 실행 직접 읽기100/100 MPU차단, 각 OFF 실행100/100 실제값읽기.
+각 실행 실제 수신버퍼4개 각각25회 직접 접근, 시스템호출600회.
+PRE/POST 격리, 모든 앱의 own/foreign/kernel READ+WRITE 정책, 복구통신, 스택여유 PASS.
+
+링크된 ARM 코드 에뮬레이션:
+- PUB 발행 반환 -> 실제 읽기 -> 완료/대기 순서 (PUB2회, SUB1회 호출) PASS.
+- 발행 성공/오류 반환이 완료 알림보다 먼저 발생 PASS.
+- 대상주소/읽기결과/예외횟수 변조 시 완료 알림 전에 실패 PASS.
+- MPU 설정의 허용 슬롯, 생략 슬롯 거부, PendSV 레지스터/스택/CONTROL 상태 PASS.
+- SVC의 잘못된 진입주소/중첩/비활성 호출/잘못된 복귀 거부 PASS.
+에뮬레이션의 ROS/스케줄러는 스텁이며, 실제 통신/MPU차단은 위 보드검증으로 확인.
+
+최종 주석 정리 후 재빌드한 ELF의 모든 PT_LOAD 내용/주소/크기/권한은
+측정 ELF와 MODE1/2 모두 일치. results.json에 측정 ELF SHA256 기록.
+LowFat config.h/config.c, lowfat_mcu.c, microros_allocators.c는 기존 trim2와 바이트 단위 동일.
+
+200샘플씩 합산 (통신 대기 변동을 포함하는 실측값, 통계적 상한 보장 아님):
+all_dispatch_excluding_middleware: OFF평균=113.045545us ON평균=180.010182us 배율=1.592369 평균추가=66.964636us 총추가=13392.927273us
+pub_request_to_all_done: OFF평균=33638.172091us ON평균=39367.463682us 배율=1.170321 평균추가=5729.291591us 총추가=1145858.318182us
+
+전체 경과시간은 micro-ROS 통신대기 포함. 그 차이를 순수 MPU 비용으로 해석하지 말 것.
+미들웨어 제외 구간도 앱 처리/전환/검증/직접접근/예외복구를 포함하며 MPU 레지스터 쓰기만의 시간이 아님.
+이전 trim2는 직접 접근을 측정 밖에서 실행했으므로 같은 작업량의 최적화 전후 비교가 아님.
+SFI 미구현. 공통 신뢰 미들웨어를 사용하는 앱 객체/스택 격리 실험임.

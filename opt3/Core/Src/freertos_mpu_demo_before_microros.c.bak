@@ -1,0 +1,210 @@
+/* Minimal FreeRTOS-MPU experiment with a LowFat-style node allocator. */
+#include "main.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "SEGGER_RTT.h"
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+#include "freertos_mpu_demo.h"
+
+#if !defined(configENABLE_MPU) || (configENABLE_MPU != 1)
+#error "Use the FreeRTOS Cortex-M33 MPU port and set configENABLE_MPU to 1."
+#endif
+#if !defined(portUSING_MPU_WRAPPERS) || (portUSING_MPU_WRAPPERS != 1)
+#error "The selected FreeRTOS port does not provide MPU wrappers."
+#endif
+
+#define LOWFAT_NODE_COUNT         2U
+#define LOWFAT_REGION_SHIFT       12U
+#define LOWFAT_REGION_SIZE        (1UL << LOWFAT_REGION_SHIFT) /* 4 KiB */
+#define LOWFAT_POOL_SIZE          (LOWFAT_NODE_COUNT * LOWFAT_REGION_SIZE)
+#define LOWFAT_ALLOC_ALIGNMENT    32U
+#define NODE_PUBLISHER            0U
+#define NODE_SUBSCRIBER           1U
+#define DEMO_TASK_STACK_WORDS     256U
+
+typedef struct {
+    volatile uint32_t publish_count;
+    volatile uint32_t start_read;
+    uintptr_t target_sub_message;
+} publisher_object_t;
+
+typedef struct {
+    volatile int32_t data;
+} subscriber_message_t;
+
+/* One contiguous pool, split into two equal power-of-two node regions. */
+static uint8_t g_lowfat_pool[LOWFAT_POOL_SIZE]
+    __attribute__((aligned(LOWFAT_REGION_SIZE)));
+static size_t g_lowfat_next[LOWFAT_NODE_COUNT];
+static publisher_object_t *g_publisher_object;
+static subscriber_message_t *g_subscriber_message;
+static StackType_t g_publisher_stack[DEMO_TASK_STACK_WORDS]
+    __attribute__((aligned(LOWFAT_ALLOC_ALIGNMENT)));
+
+static void PublisherTask(void *argument);
+static void SubscriberTask(void *argument);
+void MemManage_Handler_C(uint32_t *fault_stack)
+    __attribute__((used, noinline));
+
+static uintptr_t LowFat_RegionStart(uint32_t node)
+{
+    return (uintptr_t)&g_lowfat_pool[node * LOWFAT_REGION_SIZE];
+}
+
+static uintptr_t LowFat_RegionEnd(uint32_t node)
+{
+    return LowFat_RegionStart(node) + LOWFAT_REGION_SIZE - 1U;
+}
+
+/* Address-derived ownership: subtraction and one shift, no object metadata. */
+static int32_t LowFat_OwnerOf(const void *address)
+{
+    uintptr_t start = (uintptr_t)g_lowfat_pool;
+    uintptr_t value = (uintptr_t)address;
+    if ((value < start) || (value >= (start + LOWFAT_POOL_SIZE))) {
+        return -1;
+    }
+    return (int32_t)((value - start) >> LOWFAT_REGION_SHIFT);
+}
+
+/* Constant-time bump allocation inside the selected node region. */
+static void *LowFat_Alloc(uint32_t node, size_t size)
+{
+    if ((node >= LOWFAT_NODE_COUNT) || (size == 0U)) {
+        return NULL;
+    }
+    size_t aligned_size = (size + LOWFAT_ALLOC_ALIGNMENT - 1U) &
+                          ~(LOWFAT_ALLOC_ALIGNMENT - 1U);
+    size_t offset = g_lowfat_next[node];
+    if ((offset + aligned_size) > LOWFAT_REGION_SIZE) {
+        return NULL;
+    }
+    void *result = (void *)(LowFat_RegionStart(node) + offset);
+    g_lowfat_next[node] = offset + aligned_size;
+    memset(result, 0, aligned_size);
+    return result;
+}
+
+static void SubscriberTask(void *argument)
+{
+    (void)argument;
+    g_subscriber_message->data = 1234;
+    SEGGER_RTT_printf(0, "[SUB WRITE] sub_msg=%p | value=%ld\n",
+                     (void *)&g_subscriber_message->data,
+                     (long)g_subscriber_message->data);
+    g_publisher_object->start_read = 1U;
+    SEGGER_RTT_printf(0, "[PUB READ] source=%p | target=%p\n",
+                     (void *)g_publisher_object,
+                     (void *)g_publisher_object->target_sub_message);
+    vTaskDelete(NULL);
+}
+
+static void PublisherTask(void *argument)
+{
+    publisher_object_t *publisher = (publisher_object_t *)argument;
+    while (publisher->start_read == 0U) {
+        taskYIELD();
+    }
+    publisher->publish_count++;
+    volatile const int32_t *target =
+        (volatile const int32_t *)publisher->target_sub_message;
+    volatile int32_t blocked_value = *target; /* Must fault here. */
+    publisher->publish_count = (uint32_t)blocked_value;
+    for (;;) {}
+}
+
+void MPU_Demo_Start(void)
+{
+    SEGGER_RTT_Init();
+    memset(g_lowfat_pool, 0, sizeof(g_lowfat_pool));
+    memset(g_lowfat_next, 0, sizeof(g_lowfat_next));
+
+    g_publisher_object = (publisher_object_t *)
+        LowFat_Alloc(NODE_PUBLISHER, sizeof(publisher_object_t));
+    g_subscriber_message = (subscriber_message_t *)
+        LowFat_Alloc(NODE_SUBSCRIBER, sizeof(subscriber_message_t));
+    if ((g_publisher_object == NULL) || (g_subscriber_message == NULL)) {
+        SEGGER_RTT_WriteString(0, "[ERROR] LowFat allocation failed\n");
+        for (;;) {}
+    }
+    g_publisher_object->target_sub_message =
+        (uintptr_t)&g_subscriber_message->data;
+
+    SEGGER_RTT_WriteString(0, "\n=== LOWFAT NODE REGIONS ===\n");
+    SEGGER_RTT_printf(0, "[PUB REGION] 0x%08lx - 0x%08lx | %lu KiB\n",
+        (unsigned long)LowFat_RegionStart(NODE_PUBLISHER),
+        (unsigned long)LowFat_RegionEnd(NODE_PUBLISHER),
+        (unsigned long)(LOWFAT_REGION_SIZE / 1024U));
+    SEGGER_RTT_printf(0, "[SUB REGION] 0x%08lx - 0x%08lx | %lu KiB\n",
+        (unsigned long)LowFat_RegionStart(NODE_SUBSCRIBER),
+        (unsigned long)LowFat_RegionEnd(NODE_SUBSCRIBER),
+        (unsigned long)(LOWFAT_REGION_SIZE / 1024U));
+    SEGGER_RTT_printf(0, "[PUB OBJECT] addr=%p | owner=%ld\n",
+        (void *)g_publisher_object,
+        (long)LowFat_OwnerOf(g_publisher_object));
+    SEGGER_RTT_printf(0, "[SUB MESSAGE] addr=%p | owner=%ld\n",
+        (void *)&g_subscriber_message->data,
+        (long)LowFat_OwnerOf(g_subscriber_message));
+
+    const TaskParameters_t publisher_parameters = {
+        .pvTaskCode = PublisherTask,
+        .pcName = "NodeA_Publisher",
+        .usStackDepth = DEMO_TASK_STACK_WORDS,
+        .pvParameters = g_publisher_object,
+        .uxPriority = tskIDLE_PRIORITY + 2U, /* Unprivileged. */
+        .puxStackBuffer = g_publisher_stack,
+        .xRegions = {
+            {
+                .pvBaseAddress = (void *)LowFat_RegionStart(NODE_PUBLISHER),
+                .ulLengthInBytes = LOWFAT_REGION_SIZE,
+                .ulParameters = tskMPU_REGION_READ_WRITE |
+                                tskMPU_REGION_EXECUTE_NEVER
+            },
+            { 0 }, { 0 }
+        }
+    };
+
+    if (xTaskCreateRestricted(&publisher_parameters, NULL) != pdPASS) {
+        SEGGER_RTT_WriteString(0, "[ERROR] Publisher task creation failed\n");
+        for (;;) {}
+    }
+    if (xTaskCreate(SubscriberTask, "NodeB_Subscriber",
+                    configMINIMAL_STACK_SIZE + 128U, NULL,
+                    (tskIDLE_PRIORITY + 3U) | portPRIVILEGE_BIT,
+                    NULL) != pdPASS) {
+        SEGGER_RTT_WriteString(0, "[ERROR] Subscriber task creation failed\n");
+        for (;;) {}
+    }
+}
+
+void MemManage_Handler(void) __attribute__((naked));
+void MemManage_Handler(void)
+{
+    __asm volatile(
+        "tst lr, #4       \n"
+        "ite eq           \n"
+        "mrseq r0, msp    \n"
+        "mrsne r0, psp    \n"
+        "b MemManage_Handler_C\n");
+}
+
+void MemManage_Handler_C(uint32_t *fault_stack)
+{
+    uint32_t cfsr = SCB->CFSR;
+    uint32_t fault_addr = SCB->MMFAR;
+    uint32_t fault_pc = fault_stack[6];
+    SEGGER_RTT_WriteString(0, "\n=== MPU ACCESS BLOCKED ===\n");
+    SEGGER_RTT_printf(0, "publisher     : %p (region %ld)\n",
+        (void *)g_publisher_object,
+        (long)LowFat_OwnerOf(g_publisher_object));
+    SEGGER_RTT_printf(0, "blocked addr  : 0x%08lx (sub_msg, region %ld)\n",
+        (unsigned long)fault_addr,
+        (long)LowFat_OwnerOf((void *)(uintptr_t)fault_addr));
+    SEGGER_RTT_printf(0, "fault PC      : 0x%08lx\n", (unsigned long)fault_pc);
+    SEGGER_RTT_printf(0, "CFSR          : 0x%08lx\n", (unsigned long)cfsr);
+    SEGGER_RTT_WriteString(0, "result        : READ BLOCKED\n");
+    SEGGER_RTT_WriteString(0, "==========================\n");
+    for (;;) { __NOP(); }
+}

@@ -1,0 +1,38 @@
+2026-11-19 freertos_app_sfi 검증 / 실제 PUB-SUB 앱 비교
+
+빌드: CubeIDE 2.2.0, ARM GCC, Debug -O2. MODE1/2/3 × 직접읽기0/1 모두 0 errors / 0 warnings.
+보드: STM32L552 Cortex-M33 110MHz. 실제 COM7 + WSL micro-ROS Agent 사용.
+각 구성 2회씩 = 12회 실행. 구성당 200샘플. 모든 샘플을 포함, 이상값 제외 없음.
+최초 Agent 응답 없음으로 측정 시작 실패 1회가 있었으며 연결을 재시작한 뒤 새 측정 세트를 실행.
+12회 모두 valid=YES, SUB4개 각각100/100, 오류0, 정상 통신 복구/스택 여유 PASS.
+직접 읽기 ON: baseline100회 허용, MPU100회 hardware차단, SFI100회 접근전거부(각 실행).
+직접 읽기 OFF: 정상 통신 중 공격0회. PRE/POST 보호검사와 정책검사는 별도로 PASS.
+실제 수신버퍼4개에 고르게 접근, 인접32바이트 LowFat 객체 유지.
+공통 gate 진입600회/100회 반복. 실제 예외 총횟수와는 다른 지표.
+SFI 접근검사: 공격포함4000회/실행, 정상통신만3700회/실행. 검사 및 카운터 비용은 측정에 포함.
+
+정적 검증:
+- 4개 C 앱 함수 전체의 기계어 디코딩, 직접 호출 대상, 스택 프레임 균형/고정 범위, 반환 검사.
+- 동적 포인터 load/store는 검사함수만 허용. 고정 stack-local 접근과 readonly PC literal은 정적 검증.
+- 앱의 임의 간접분기, 권한변경, 스택피벗, 금지함수진입은 빌드 실패.
+- 11종 우회 변형 + 실제 LDR 삽입 ELF가 거부되는 음성 테스트 PASS.
+
+링크된 런타임 에뮬레이션: 270 read/write cases PASS.
+- 5개 실제 TCB 식별, 자기 객체 모든word/스택 허용, 다른 객체/스택/커널/검사메타데이터 거부.
+- null/overflow/unaligned/boundary/peripheral/code 접근 거부.
+- active call frame 간접쓰기 거부, 위조된 호출자 식별 거부.
+호스트 테스트는 MPU/UART를 모사해 성능을 주장하는 테스트가 아님. 실제 통신/MPU/SFI 동작은 별도 보드 검증.
+LowFat config.h/config.c, lowfat_mcu.c, microros_allocators.c는 opt2와 바이트 단위 동일.
+비교 도구: 동일 설정/작업부하만 허용하고 서로 다른 부하의 로그 비교는 거부.
+
+아래 값은 각 모드200회 합산 평균이며 ms가 아닌 us:
+attack=0 all_dispatch_excluding_middleware: baseline=110.805318 MPU=173.471636 SFI=145.270636 us; MPU/base=1.565553, SFI/base=1.311044; 총추가(200회) MPU=12533.263636us SFI=6893.063636us
+attack=0 pub_request_to_all_done: baseline=36179.211818 MPU=37519.773864 SFI=34693.877318 us; MPU/base=1.037053, SFI/base=0.958945; 총추가(200회) MPU=268112.409091us SFI=-297066.900000us
+attack=1 all_dispatch_excluding_middleware: baseline=112.631045 MPU=180.119409 SFI=152.496045 us; MPU/base=1.599199, SFI/base=1.353943; 총추가(200회) MPU=13497.672727us SFI=7973.000000us
+attack=1 pub_request_to_all_done: baseline=35205.463955 MPU=40031.881227 SFI=34111.376227 us; MPU/base=1.137093, SFI/base=0.968923; 총추가(200회) MPU=965283.454545us SFI=-218817.545455us
+
+범위: 고정된 실제 C 앱의 소유 메모리 경계 비교. 범용 자동 SFI 컴파일러/전체 미들웨어 SFI가 아님.
+MPU와 완전히 동일한 권한모델은 아님: SFI는 활성 호출프레임 간접쓰기와 임의 Flash 데이터 읽기에 추가 제약.
+공통 신뢰 미들웨어/커널/할당기/SFI 검사기/컴파일·검증 환경을 신뢰.
+전체 시간에는 통신 대기 변동이 포함됨. MPU/SFI 고유 비용만으로 해석하거나 단일 실행 배율을 보장값으로 쓰지 말 것.
+CPU SFI가 MPU보다 항상 느려야 하는 것은 아님. 이번 작은 고정 앱에서만 관찰한 결과.

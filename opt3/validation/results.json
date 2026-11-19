@@ -1,0 +1,1550 @@
+[
+  {
+    "rep": 1,
+    "stage": 1,
+    "mode": 3,
+    "elf_sha256": "5ae98ea5c1a1ee7df30ee0676e88d496ba16c5f32f4ad4792b2e87998149cd53",
+    "log": "rep1_attack1_mode3.log",
+    "metrics": {
+      "iteration_total": {
+        "count": 100,
+        "total_cycles": 386506679,
+        "mean_us": 35136.97081818182
+      },
+      "pub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 387262,
+        "mean_us": 35.205636363636366
+      },
+      "sub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 1285749,
+        "mean_us": 116.88627272727274
+      },
+      "all_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 1673011,
+        "mean_us": 152.0919090909091
+      },
+      "receive_internal_total": {
+        "count": 100,
+        "total_cycles": 170103995,
+        "mean_us": 15463.999545454546
+      },
+      "middleware_internal_total": {
+        "count": 100,
+        "total_cycles": 384633331,
+        "mean_us": 34966.666454545455
+      },
+      "sub1_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 340314,
+        "mean_us": 30.937636363636365
+      },
+      "sub2_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 321130,
+        "mean_us": 29.193636363636365
+      },
+      "sub3_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 315913,
+        "mean_us": 28.71936363636364
+      },
+      "sub4_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 308392,
+        "mean_us": 28.035636363636364
+      },
+      "app_execution_total_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 675634,
+        "mean_us": 61.42127272727273
+      },
+      "pub_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 187532,
+        "mean_us": 17.048363636363636
+      },
+      "sub1_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 131337,
+        "mean_us": 11.939727272727273
+      },
+      "sub2_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 122441,
+        "mean_us": 11.130999999999998
+      },
+      "sub3_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 119603,
+        "mean_us": 10.873
+      },
+      "sub4_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 114721,
+        "mean_us": 10.429181818181819
+      },
+      "publisher_task_roundtrip": {
+        "count": 100,
+        "total_cycles": 214916598,
+        "mean_us": 19537.872545454546
+      },
+      "publish_call": {
+        "count": 100,
+        "total_cycles": 214529336,
+        "mean_us": 19502.66690909091
+      },
+      "subscriber_tasks_total": {
+        "count": 100,
+        "total_cycles": 171389744,
+        "mean_us": 15580.885818181818
+      },
+      "pub_request_to_all_done": {
+        "count": 100,
+        "total_cycles": 386499494,
+        "mean_us": 35136.31763636364
+      },
+      "sub1_task": {
+        "count": 100,
+        "total_cycles": 58354467,
+        "mean_us": 5304.951545454545
+      },
+      "sub2_task": {
+        "count": 100,
+        "total_cycles": 50340989,
+        "mean_us": 4576.453545454546
+      },
+      "sub3_task": {
+        "count": 100,
+        "total_cycles": 27857740,
+        "mean_us": 2532.521818181818
+      },
+      "sub4_task": {
+        "count": 100,
+        "total_cycles": 34836548,
+        "mean_us": 3166.9589090909094
+      }
+    }
+  },
+  {
+    "rep": 1,
+    "stage": 1,
+    "mode": 1,
+    "elf_sha256": "4d411ba1eae9dae33f32f3e44b80b4df7396591a385a8752da2b4ce2cc5e107c",
+    "log": "rep1_attack1_mode1.log",
+    "metrics": {
+      "iteration_total": {
+        "count": 100,
+        "total_cycles": 406172154,
+        "mean_us": 36924.741272727275
+      },
+      "pub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 291677,
+        "mean_us": 26.51609090909091
+      },
+      "sub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 952177,
+        "mean_us": 86.56154545454545
+      },
+      "all_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 1243854,
+        "mean_us": 113.07763636363636
+      },
+      "receive_internal_total": {
+        "count": 100,
+        "total_cycles": 186919849,
+        "mean_us": 16992.713545454546
+      },
+      "middleware_internal_total": {
+        "count": 100,
+        "total_cycles": 404750074,
+        "mean_us": 36795.461272727276
+      },
+      "sub1_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 253569,
+        "mean_us": 23.05172727272727
+      },
+      "sub2_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 237701,
+        "mean_us": 21.60918181818182
+      },
+      "sub3_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 233780,
+        "mean_us": 21.252727272727274
+      },
+      "sub4_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 227127,
+        "mean_us": 20.647909090909092
+      },
+      "app_execution_total_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 306305,
+        "mean_us": 27.84590909090909
+      },
+      "pub_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 103063,
+        "mean_us": 9.369363636363635
+      },
+      "sub1_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 56229,
+        "mean_us": 5.111727272727273
+      },
+      "sub2_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 50659,
+        "mean_us": 4.605363636363637
+      },
+      "sub3_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 49422,
+        "mean_us": 4.492909090909091
+      },
+      "sub4_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 46932,
+        "mean_us": 4.266545454545454
+      },
+      "publisher_task_roundtrip": {
+        "count": 100,
+        "total_cycles": 218121902,
+        "mean_us": 19829.26381818182
+      },
+      "publish_call": {
+        "count": 100,
+        "total_cycles": 217830225,
+        "mean_us": 19802.747727272726
+      },
+      "subscriber_tasks_total": {
+        "count": 100,
+        "total_cycles": 187872026,
+        "mean_us": 17079.27509090909
+      },
+      "pub_request_to_all_done": {
+        "count": 100,
+        "total_cycles": 406164969,
+        "mean_us": 36924.08809090909
+      },
+      "sub1_task": {
+        "count": 100,
+        "total_cycles": 70533520,
+        "mean_us": 6412.138181818183
+      },
+      "sub2_task": {
+        "count": 100,
+        "total_cycles": 33186042,
+        "mean_us": 3016.912909090909
+      },
+      "sub3_task": {
+        "count": 100,
+        "total_cycles": 48969070,
+        "mean_us": 4451.733636363637
+      },
+      "sub4_task": {
+        "count": 100,
+        "total_cycles": 35183394,
+        "mean_us": 3198.490363636364
+      }
+    }
+  },
+  {
+    "rep": 1,
+    "stage": 1,
+    "mode": 2,
+    "elf_sha256": "ee5fde798fc52e5f7969e6671945b6a598305d9b0c2fb5f6a7302aa19f6cb0f0",
+    "log": "rep1_attack1_mode2.log",
+    "metrics": {
+      "iteration_total": {
+        "count": 100,
+        "total_cycles": 414069077,
+        "mean_us": 37642.643363636365
+      },
+      "pub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 480829,
+        "mean_us": 43.71172727272727
+      },
+      "sub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 1488044,
+        "mean_us": 135.27672727272727
+      },
+      "all_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 1968873,
+        "mean_us": 178.98845454545454
+      },
+      "receive_internal_total": {
+        "count": 100,
+        "total_cycles": 137631957,
+        "mean_us": 12511.996090909091
+      },
+      "middleware_internal_total": {
+        "count": 100,
+        "total_cycles": 411885834,
+        "mean_us": 37444.16672727273
+      },
+      "sub1_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 383465,
+        "mean_us": 34.860454545454544
+      },
+      "sub2_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 372648,
+        "mean_us": 33.87709090909091
+      },
+      "sub3_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 367916,
+        "mean_us": 33.44690909090909
+      },
+      "sub4_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 364015,
+        "mean_us": 33.09227272727273
+      },
+      "app_execution_total_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 678536,
+        "mean_us": 61.68509090909092
+      },
+      "pub_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 227522,
+        "mean_us": 20.683818181818182
+      },
+      "sub1_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 114885,
+        "mean_us": 10.44409090909091
+      },
+      "sub2_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 113395,
+        "mean_us": 10.308636363636362
+      },
+      "sub3_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 112228,
+        "mean_us": 10.202545454545454
+      },
+      "sub4_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 110506,
+        "mean_us": 10.046
+      },
+      "publisher_task_roundtrip": {
+        "count": 100,
+        "total_cycles": 274734706,
+        "mean_us": 24975.882363636363
+      },
+      "publish_call": {
+        "count": 100,
+        "total_cycles": 274253877,
+        "mean_us": 24932.170636363633
+      },
+      "subscriber_tasks_total": {
+        "count": 100,
+        "total_cycles": 139120001,
+        "mean_us": 12647.272818181817
+      },
+      "pub_request_to_all_done": {
+        "count": 100,
+        "total_cycles": 414061887,
+        "mean_us": 37641.989727272725
+      },
+      "sub1_task": {
+        "count": 100,
+        "total_cycles": 43690383,
+        "mean_us": 3971.853
+      },
+      "sub2_task": {
+        "count": 100,
+        "total_cycles": 33653617,
+        "mean_us": 3059.419727272727
+      },
+      "sub3_task": {
+        "count": 100,
+        "total_cycles": 33133579,
+        "mean_us": 3012.1435454545453
+      },
+      "sub4_task": {
+        "count": 100,
+        "total_cycles": 28642422,
+        "mean_us": 2603.8565454545455
+      }
+    }
+  },
+  {
+    "rep": 1,
+    "stage": 0,
+    "mode": 1,
+    "elf_sha256": "14c32b538f9a6b653544bd595a3cdb0610de13a3a4dba042526ef0d77e3845c7",
+    "log": "rep1_attack0_mode1.log",
+    "metrics": {
+      "iteration_total": {
+        "count": 100,
+        "total_cycles": 380021568,
+        "mean_us": 34547.415272727274
+      },
+      "pub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 254908,
+        "mean_us": 23.173454545454547
+      },
+      "sub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 960743,
+        "mean_us": 87.34027272727273
+      },
+      "all_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 1215651,
+        "mean_us": 110.51372727272727
+      },
+      "receive_internal_total": {
+        "count": 100,
+        "total_cycles": 150136893,
+        "mean_us": 13648.808454545455
+      },
+      "middleware_internal_total": {
+        "count": 100,
+        "total_cycles": 378616972,
+        "mean_us": 34419.724727272725
+      },
+      "sub1_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 249642,
+        "mean_us": 22.694727272727274
+      },
+      "sub2_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 244477,
+        "mean_us": 22.225181818181817
+      },
+      "sub3_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 237363,
+        "mean_us": 21.578454545454548
+      },
+      "sub4_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 229261,
+        "mean_us": 20.841909090909088
+      },
+      "app_execution_total_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 263307,
+        "mean_us": 23.936999999999998
+      },
+      "pub_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 64626,
+        "mean_us": 5.875090909090909
+      },
+      "sub1_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 53865,
+        "mean_us": 4.8968181818181815
+      },
+      "sub2_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 50691,
+        "mean_us": 4.608272727272727
+      },
+      "sub3_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 48024,
+        "mean_us": 4.365818181818182
+      },
+      "sub4_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 46101,
+        "mean_us": 4.191
+      },
+      "publisher_task_roundtrip": {
+        "count": 100,
+        "total_cycles": 228734987,
+        "mean_us": 20794.089727272727
+      },
+      "publish_call": {
+        "count": 100,
+        "total_cycles": 228480079,
+        "mean_us": 20770.91627272727
+      },
+      "subscriber_tasks_total": {
+        "count": 100,
+        "total_cycles": 151097636,
+        "mean_us": 13736.148727272728
+      },
+      "pub_request_to_all_done": {
+        "count": 100,
+        "total_cycles": 380014383,
+        "mean_us": 34546.76209090909
+      },
+      "sub1_task": {
+        "count": 100,
+        "total_cycles": 42317219,
+        "mean_us": 3847.019909090909
+      },
+      "sub2_task": {
+        "count": 100,
+        "total_cycles": 27756906,
+        "mean_us": 2523.355090909091
+      },
+      "sub3_task": {
+        "count": 100,
+        "total_cycles": 27373044,
+        "mean_us": 2488.4585454545454
+      },
+      "sub4_task": {
+        "count": 100,
+        "total_cycles": 53650467,
+        "mean_us": 4877.315181818182
+      }
+    }
+  },
+  {
+    "rep": 1,
+    "stage": 0,
+    "mode": 2,
+    "elf_sha256": "bf1b69491326cce6216c43aad43e3cd9b9441fe0a26356336bbd9b12a1e11920",
+    "log": "rep1_attack0_mode2.log",
+    "metrics": {
+      "iteration_total": {
+        "count": 100,
+        "total_cycles": 415014396,
+        "mean_us": 37728.581454545456
+      },
+      "pub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 411482,
+        "mean_us": 37.40745454545454
+      },
+      "sub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 1503430,
+        "mean_us": 136.67545454545453
+      },
+      "all_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 1914912,
+        "mean_us": 174.08290909090908
+      },
+      "receive_internal_total": {
+        "count": 100,
+        "total_cycles": 145306334,
+        "mean_us": 13209.666727272726
+      },
+      "middleware_internal_total": {
+        "count": 100,
+        "total_cycles": 412879758,
+        "mean_us": 37534.52345454545
+      },
+      "sub1_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 392094,
+        "mean_us": 35.64490909090909
+      },
+      "sub2_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 375746,
+        "mean_us": 34.158727272727276
+      },
+      "sub3_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 371628,
+        "mean_us": 33.784363636363636
+      },
+      "sub4_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 363962,
+        "mean_us": 33.08745454545454
+      },
+      "app_execution_total_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 657166,
+        "mean_us": 59.742363636363635
+      },
+      "pub_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 163083,
+        "mean_us": 14.825727272727272
+      },
+      "sub1_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 127130,
+        "mean_us": 11.557272727272727
+      },
+      "sub2_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 125962,
+        "mean_us": 11.451090909090908
+      },
+      "sub3_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 121684,
+        "mean_us": 11.062181818181818
+      },
+      "sub4_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 119307,
+        "mean_us": 10.846090909090908
+      },
+      "publisher_task_roundtrip": {
+        "count": 100,
+        "total_cycles": 267984906,
+        "mean_us": 24362.26418181818
+      },
+      "publish_call": {
+        "count": 100,
+        "total_cycles": 267573424,
+        "mean_us": 24324.856727272727
+      },
+      "subscriber_tasks_total": {
+        "count": 100,
+        "total_cycles": 146809764,
+        "mean_us": 13346.342181818183
+      },
+      "pub_request_to_all_done": {
+        "count": 100,
+        "total_cycles": 415007212,
+        "mean_us": 37727.92836363636
+      },
+      "sub1_task": {
+        "count": 100,
+        "total_cycles": 50952136,
+        "mean_us": 4632.012363636364
+      },
+      "sub2_task": {
+        "count": 100,
+        "total_cycles": 29173199,
+        "mean_us": 2652.1090000000004
+      },
+      "sub3_task": {
+        "count": 100,
+        "total_cycles": 28756447,
+        "mean_us": 2614.2224545454546
+      },
+      "sub4_task": {
+        "count": 100,
+        "total_cycles": 37927982,
+        "mean_us": 3447.9983636363636
+      }
+    }
+  },
+  {
+    "rep": 1,
+    "stage": 0,
+    "mode": 3,
+    "elf_sha256": "9019a361c247194f271e6be349e7b22601525cde2a9045a117f0b42d44c8171f",
+    "log": "rep1_attack0_mode3.log",
+    "metrics": {
+      "iteration_total": {
+        "count": 100,
+        "total_cycles": 398570157,
+        "mean_us": 36233.650636363636
+      },
+      "pub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 305429,
+        "mean_us": 27.766272727272725
+      },
+      "sub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 1296609,
+        "mean_us": 117.87354545454545
+      },
+      "all_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 1602038,
+        "mean_us": 145.63981818181819
+      },
+      "receive_internal_total": {
+        "count": 100,
+        "total_cycles": 132379451,
+        "mean_us": 12034.495545454545
+      },
+      "middleware_internal_total": {
+        "count": 100,
+        "total_cycles": 396788688,
+        "mean_us": 36071.69890909091
+      },
+      "sub1_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 336455,
+        "mean_us": 30.58681818181818
+      },
+      "sub2_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 328885,
+        "mean_us": 29.898636363636363
+      },
+      "sub3_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 318760,
+        "mean_us": 28.97818181818182
+      },
+      "sub4_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 312509,
+        "mean_us": 28.409909090909093
+      },
+      "app_execution_total_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 637756,
+        "mean_us": 57.977818181818186
+      },
+      "pub_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 115826,
+        "mean_us": 10.529636363636364
+      },
+      "sub1_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 136658,
+        "mean_us": 12.423454545454545
+      },
+      "sub2_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 130934,
+        "mean_us": 11.903090909090908
+      },
+      "sub3_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 129096,
+        "mean_us": 11.735999999999999
+      },
+      "sub4_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 125242,
+        "mean_us": 11.385636363636364
+      },
+      "publisher_task_roundtrip": {
+        "count": 100,
+        "total_cycles": 264714666,
+        "mean_us": 24064.96963636364
+      },
+      "publish_call": {
+        "count": 100,
+        "total_cycles": 264409237,
+        "mean_us": 24037.203363636363
+      },
+      "subscriber_tasks_total": {
+        "count": 100,
+        "total_cycles": 133676060,
+        "mean_us": 12152.369090909091
+      },
+      "pub_request_to_all_done": {
+        "count": 100,
+        "total_cycles": 398562972,
+        "mean_us": 36232.99745454545
+      },
+      "sub1_task": {
+        "count": 100,
+        "total_cycles": 44855607,
+        "mean_us": 4077.782454545455
+      },
+      "sub2_task": {
+        "count": 100,
+        "total_cycles": 28575369,
+        "mean_us": 2597.760818181818
+      },
+      "sub3_task": {
+        "count": 100,
+        "total_cycles": 26243230,
+        "mean_us": 2385.748181818182
+      },
+      "sub4_task": {
+        "count": 100,
+        "total_cycles": 34001854,
+        "mean_us": 3091.077636363636
+      }
+    }
+  },
+  {
+    "rep": 2,
+    "stage": 0,
+    "mode": 3,
+    "elf_sha256": "9019a361c247194f271e6be349e7b22601525cde2a9045a117f0b42d44c8171f",
+    "log": "rep2_attack0_mode3.log",
+    "metrics": {
+      "iteration_total": {
+        "count": 100,
+        "total_cycles": 364709514,
+        "mean_us": 33155.41036363636
+      },
+      "pub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 305265,
+        "mean_us": 27.751363636363635
+      },
+      "sub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 1288651,
+        "mean_us": 117.1500909090909
+      },
+      "all_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 1593916,
+        "mean_us": 144.90145454545456
+      },
+      "receive_internal_total": {
+        "count": 100,
+        "total_cycles": 155549791,
+        "mean_us": 14140.89009090909
+      },
+      "middleware_internal_total": {
+        "count": 100,
+        "total_cycles": 362938486,
+        "mean_us": 32994.40781818182
+      },
+      "sub1_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 334097,
+        "mean_us": 30.372454545454545
+      },
+      "sub2_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 324071,
+        "mean_us": 29.461
+      },
+      "sub3_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 316619,
+        "mean_us": 28.783545454545457
+      },
+      "sub4_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 313864,
+        "mean_us": 28.533090909090912
+      },
+      "app_execution_total_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 635970,
+        "mean_us": 57.81545454545455
+      },
+      "pub_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 115439,
+        "mean_us": 10.494454545454547
+      },
+      "sub1_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 135830,
+        "mean_us": 12.348181818181818
+      },
+      "sub2_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 130613,
+        "mean_us": 11.873909090909091
+      },
+      "sub3_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 127660,
+        "mean_us": 11.605454545454545
+      },
+      "sub4_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 126428,
+        "mean_us": 11.493454545454545
+      },
+      "publisher_task_roundtrip": {
+        "count": 100,
+        "total_cycles": 207693960,
+        "mean_us": 18881.269090909092
+      },
+      "publish_call": {
+        "count": 100,
+        "total_cycles": 207388695,
+        "mean_us": 18853.517727272727
+      },
+      "subscriber_tasks_total": {
+        "count": 100,
+        "total_cycles": 156838442,
+        "mean_us": 14258.04018181818
+      },
+      "pub_request_to_all_done": {
+        "count": 100,
+        "total_cycles": 364702329,
+        "mean_us": 33154.75718181818
+      },
+      "sub1_task": {
+        "count": 100,
+        "total_cycles": 61136147,
+        "mean_us": 5557.831545454545
+      },
+      "sub2_task": {
+        "count": 100,
+        "total_cycles": 29075649,
+        "mean_us": 2643.2408181818187
+      },
+      "sub3_task": {
+        "count": 100,
+        "total_cycles": 29977380,
+        "mean_us": 2725.2163636363634
+      },
+      "sub4_task": {
+        "count": 100,
+        "total_cycles": 36649266,
+        "mean_us": 3331.7514545454546
+      }
+    }
+  },
+  {
+    "rep": 2,
+    "stage": 0,
+    "mode": 2,
+    "elf_sha256": "bf1b69491326cce6216c43aad43e3cd9b9441fe0a26356336bbd9b12a1e11920",
+    "log": "rep2_attack0_mode2.log",
+    "metrics": {
+      "iteration_total": {
+        "count": 100,
+        "total_cycles": 410435003,
+        "mean_us": 37312.273
+      },
+      "pub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 411615,
+        "mean_us": 37.41954545454546
+      },
+      "sub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 1489849,
+        "mean_us": 135.44081818181817
+      },
+      "all_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 1901464,
+        "mean_us": 172.86036363636364
+      },
+      "receive_internal_total": {
+        "count": 100,
+        "total_cycles": 164667424,
+        "mean_us": 14969.765818181819
+      },
+      "middleware_internal_total": {
+        "count": 100,
+        "total_cycles": 408314061,
+        "mean_us": 37119.460090909095
+      },
+      "sub1_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 386315,
+        "mean_us": 35.11954545454545
+      },
+      "sub2_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 372479,
+        "mean_us": 33.86172727272727
+      },
+      "sub3_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 367540,
+        "mean_us": 33.412727272727274
+      },
+      "sub4_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 363515,
+        "mean_us": 33.04681818181818
+      },
+      "app_execution_total_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 653731,
+        "mean_us": 59.430090909090914
+      },
+      "pub_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 163671,
+        "mean_us": 14.879181818181818
+      },
+      "sub1_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 124825,
+        "mean_us": 11.347727272727273
+      },
+      "sub2_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 123171,
+        "mean_us": 11.197363636363637
+      },
+      "sub3_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 122448,
+        "mean_us": 11.131636363636364
+      },
+      "sub4_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 119616,
+        "mean_us": 10.87418181818182
+      },
+      "publisher_task_roundtrip": {
+        "count": 100,
+        "total_cycles": 244058252,
+        "mean_us": 22187.113818181817
+      },
+      "publish_call": {
+        "count": 100,
+        "total_cycles": 243646637,
+        "mean_us": 22149.694272727273
+      },
+      "subscriber_tasks_total": {
+        "count": 100,
+        "total_cycles": 166157273,
+        "mean_us": 15105.206636363635
+      },
+      "pub_request_to_all_done": {
+        "count": 100,
+        "total_cycles": 410427813,
+        "mean_us": 37311.61936363637
+      },
+      "sub1_task": {
+        "count": 100,
+        "total_cycles": 38666028,
+        "mean_us": 3515.0934545454547
+      },
+      "sub2_task": {
+        "count": 100,
+        "total_cycles": 45447086,
+        "mean_us": 4131.553272727273
+      },
+      "sub3_task": {
+        "count": 100,
+        "total_cycles": 28087874,
+        "mean_us": 2553.4430909090906
+      },
+      "sub4_task": {
+        "count": 100,
+        "total_cycles": 53956285,
+        "mean_us": 4905.116818181818
+      }
+    }
+  },
+  {
+    "rep": 2,
+    "stage": 0,
+    "mode": 1,
+    "elf_sha256": "14c32b538f9a6b653544bd595a3cdb0610de13a3a4dba042526ef0d77e3845c7",
+    "log": "rep2_attack0_mode1.log",
+    "metrics": {
+      "iteration_total": {
+        "count": 100,
+        "total_cycles": 415935462,
+        "mean_us": 37812.31472727273
+      },
+      "pub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 258378,
+        "mean_us": 23.488909090909093
+      },
+      "sub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 963688,
+        "mean_us": 87.60799999999999
+      },
+      "all_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 1222066,
+        "mean_us": 111.09690909090908
+      },
+      "receive_internal_total": {
+        "count": 100,
+        "total_cycles": 143578547,
+        "mean_us": 13052.59518181818
+      },
+      "middleware_internal_total": {
+        "count": 100,
+        "total_cycles": 414527260,
+        "mean_us": 37684.296363636364
+      },
+      "sub1_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 249852,
+        "mean_us": 22.713818181818183
+      },
+      "sub2_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 246014,
+        "mean_us": 22.36490909090909
+      },
+      "sub3_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 237380,
+        "mean_us": 21.58
+      },
+      "sub4_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 230442,
+        "mean_us": 20.949272727272728
+      },
+      "app_execution_total_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 268533,
+        "mean_us": 24.412090909090907
+      },
+      "pub_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 67347,
+        "mean_us": 6.122454545454546
+      },
+      "sub1_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 54389,
+        "mean_us": 4.944454545454545
+      },
+      "sub2_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 51185,
+        "mean_us": 4.653181818181818
+      },
+      "sub3_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 48251,
+        "mean_us": 4.386454545454545
+      },
+      "sub4_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 47361,
+        "mean_us": 4.305545454545455
+      },
+      "publisher_task_roundtrip": {
+        "count": 100,
+        "total_cycles": 271207091,
+        "mean_us": 24655.19009090909
+      },
+      "publish_call": {
+        "count": 100,
+        "total_cycles": 270948713,
+        "mean_us": 24631.70118181818
+      },
+      "subscriber_tasks_total": {
+        "count": 100,
+        "total_cycles": 144542235,
+        "mean_us": 13140.20318181818
+      },
+      "pub_request_to_all_done": {
+        "count": 100,
+        "total_cycles": 415928277,
+        "mean_us": 37811.661545454546
+      },
+      "sub1_task": {
+        "count": 100,
+        "total_cycles": 45243039,
+        "mean_us": 4113.003545454546
+      },
+      "sub2_task": {
+        "count": 100,
+        "total_cycles": 31402383,
+        "mean_us": 2854.762090909091
+      },
+      "sub3_task": {
+        "count": 100,
+        "total_cycles": 33876316,
+        "mean_us": 3079.665090909091
+      },
+      "sub4_task": {
+        "count": 100,
+        "total_cycles": 34020497,
+        "mean_us": 3092.772454545455
+      }
+    }
+  },
+  {
+    "rep": 2,
+    "stage": 1,
+    "mode": 2,
+    "elf_sha256": "ee5fde798fc52e5f7969e6671945b6a598305d9b0c2fb5f6a7302aa19f6cb0f0",
+    "log": "rep2_attack1_mode2.log",
+    "metrics": {
+      "iteration_total": {
+        "count": 100,
+        "total_cycles": 466646688,
+        "mean_us": 42422.426181818184
+      },
+      "pub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 483654,
+        "mean_us": 43.968545454545456
+      },
+      "sub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 1510100,
+        "mean_us": 137.28181818181818
+      },
+      "all_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 1993754,
+        "mean_us": 181.25036363636366
+      },
+      "receive_internal_total": {
+        "count": 100,
+        "total_cycles": 196800263,
+        "mean_us": 17890.933
+      },
+      "middleware_internal_total": {
+        "count": 100,
+        "total_cycles": 464434913,
+        "mean_us": 42221.35572727272
+      },
+      "sub1_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 393483,
+        "mean_us": 35.771181818181816
+      },
+      "sub2_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 380708,
+        "mean_us": 34.609818181818184
+      },
+      "sub3_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 372444,
+        "mean_us": 33.85854545454546
+      },
+      "sub4_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 363465,
+        "mean_us": 33.042272727272724
+      },
+      "app_execution_total_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 693816,
+        "mean_us": 63.07418181818181
+      },
+      "pub_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 230151,
+        "mean_us": 20.922818181818183
+      },
+      "sub1_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 119844,
+        "mean_us": 10.89490909090909
+      },
+      "sub2_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 117861,
+        "mean_us": 10.714636363636364
+      },
+      "sub3_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 115029,
+        "mean_us": 10.457181818181818
+      },
+      "sub4_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 110931,
+        "mean_us": 10.084636363636363
+      },
+      "publisher_task_roundtrip": {
+        "count": 100,
+        "total_cycles": 268118304,
+        "mean_us": 24374.391272727273
+      },
+      "publish_call": {
+        "count": 100,
+        "total_cycles": 267634650,
+        "mean_us": 24330.42272727273
+      },
+      "subscriber_tasks_total": {
+        "count": 100,
+        "total_cycles": 198310363,
+        "mean_us": 18028.21481818182
+      },
+      "pub_request_to_all_done": {
+        "count": 100,
+        "total_cycles": 466639500,
+        "mean_us": 42421.77272727273
+      },
+      "sub1_task": {
+        "count": 100,
+        "total_cycles": 82102685,
+        "mean_us": 7463.880454545454
+      },
+      "sub2_task": {
+        "count": 100,
+        "total_cycles": 29021263,
+        "mean_us": 2638.2966363636365
+      },
+      "sub3_task": {
+        "count": 100,
+        "total_cycles": 32028797,
+        "mean_us": 2911.7088181818185
+      },
+      "sub4_task": {
+        "count": 100,
+        "total_cycles": 55157618,
+        "mean_us": 5014.328909090909
+      }
+    }
+  },
+  {
+    "rep": 2,
+    "stage": 1,
+    "mode": 1,
+    "elf_sha256": "4d411ba1eae9dae33f32f3e44b80b4df7396591a385a8752da2b4ce2cc5e107c",
+    "log": "rep2_attack1_mode1.log",
+    "metrics": {
+      "iteration_total": {
+        "count": 100,
+        "total_cycles": 368362423,
+        "mean_us": 33487.492999999995
+      },
+      "pub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 287047,
+        "mean_us": 26.095181818181818
+      },
+      "sub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 946982,
+        "mean_us": 86.08927272727273
+      },
+      "all_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 1234029,
+        "mean_us": 112.18445454545454
+      },
+      "receive_internal_total": {
+        "count": 100,
+        "total_cycles": 151883719,
+        "mean_us": 13807.610818181818
+      },
+      "middleware_internal_total": {
+        "count": 100,
+        "total_cycles": 366949547,
+        "mean_us": 33359.04972727273
+      },
+      "sub1_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 253886,
+        "mean_us": 23.080545454545454
+      },
+      "sub2_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 238179,
+        "mean_us": 21.652636363636365
+      },
+      "sub3_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 232211,
+        "mean_us": 21.11009090909091
+      },
+      "sub4_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 222706,
+        "mean_us": 20.246
+      },
+      "app_execution_total_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 301443,
+        "mean_us": 27.403909090909092
+      },
+      "pub_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 101844,
+        "mean_us": 9.258545454545455
+      },
+      "sub1_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 56091,
+        "mean_us": 5.099181818181818
+      },
+      "sub2_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 50656,
+        "mean_us": 4.605090909090909
+      },
+      "sub3_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 48127,
+        "mean_us": 4.375181818181818
+      },
+      "sub4_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 44725,
+        "mean_us": 4.0659090909090905
+      },
+      "publisher_task_roundtrip": {
+        "count": 100,
+        "total_cycles": 215352875,
+        "mean_us": 19577.534090909092
+      },
+      "publish_call": {
+        "count": 100,
+        "total_cycles": 215065828,
+        "mean_us": 19551.43890909091
+      },
+      "subscriber_tasks_total": {
+        "count": 100,
+        "total_cycles": 152830701,
+        "mean_us": 13893.700090909091
+      },
+      "pub_request_to_all_done": {
+        "count": 100,
+        "total_cycles": 368355238,
+        "mean_us": 33486.83981818182
+      },
+      "sub1_task": {
+        "count": 100,
+        "total_cycles": 49122841,
+        "mean_us": 4465.712818181818
+      },
+      "sub2_task": {
+        "count": 100,
+        "total_cycles": 47662335,
+        "mean_us": 4332.939545454546
+      },
+      "sub3_task": {
+        "count": 100,
+        "total_cycles": 24718073,
+        "mean_us": 2247.0975454545455
+      },
+      "sub4_task": {
+        "count": 100,
+        "total_cycles": 31327452,
+        "mean_us": 2847.950181818182
+      }
+    }
+  },
+  {
+    "rep": 2,
+    "stage": 1,
+    "mode": 3,
+    "elf_sha256": "5ae98ea5c1a1ee7df30ee0676e88d496ba16c5f32f4ad4792b2e87998149cd53",
+    "log": "rep2_attack1_mode3.log",
+    "metrics": {
+      "iteration_total": {
+        "count": 100,
+        "total_cycles": 363957968,
+        "mean_us": 33087.087999999996
+      },
+      "pub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 386928,
+        "mean_us": 35.17527272727273
+      },
+      "sub_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 1294974,
+        "mean_us": 117.7249090909091
+      },
+      "all_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 1681902,
+        "mean_us": 152.90018181818184
+      },
+      "receive_internal_total": {
+        "count": 100,
+        "total_cycles": 147171312,
+        "mean_us": 13379.21018181818
+      },
+      "middleware_internal_total": {
+        "count": 100,
+        "total_cycles": 362073978,
+        "mean_us": 32915.81618181818
+      },
+      "sub1_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 345544,
+        "mean_us": 31.41309090909091
+      },
+      "sub2_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 325785,
+        "mean_us": 29.61681818181818
+      },
+      "sub3_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 318382,
+        "mean_us": 28.943818181818184
+      },
+      "sub4_dispatch_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 305263,
+        "mean_us": 27.751181818181816
+      },
+      "app_execution_total_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 679180,
+        "mean_us": 61.74363636363636
+      },
+      "pub_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 185249,
+        "mean_us": 16.840818181818182
+      },
+      "sub1_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 133664,
+        "mean_us": 12.151272727272728
+      },
+      "sub2_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 126210,
+        "mean_us": 11.473636363636363
+      },
+      "sub3_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 121860,
+        "mean_us": 11.078181818181818
+      },
+      "sub4_app_excluding_middleware": {
+        "count": 100,
+        "total_cycles": 112197,
+        "mean_us": 10.199727272727273
+      },
+      "publisher_task_roundtrip": {
+        "count": 100,
+        "total_cycles": 215289594,
+        "mean_us": 19571.781272727272
+      },
+      "publish_call": {
+        "count": 100,
+        "total_cycles": 214902666,
+        "mean_us": 19536.606
+      },
+      "subscriber_tasks_total": {
+        "count": 100,
+        "total_cycles": 148466286,
+        "mean_us": 13496.93509090909
+      },
+      "pub_request_to_all_done": {
+        "count": 100,
+        "total_cycles": 363950783,
+        "mean_us": 33086.43481818182
+      },
+      "sub1_task": {
+        "count": 100,
+        "total_cycles": 44779392,
+        "mean_us": 4070.8538181818185
+      },
+      "sub2_task": {
+        "count": 100,
+        "total_cycles": 42422889,
+        "mean_us": 3856.6262727272724
+      },
+      "sub3_task": {
+        "count": 100,
+        "total_cycles": 27940928,
+        "mean_us": 2540.084363636364
+      },
+      "sub4_task": {
+        "count": 100,
+        "total_cycles": 33323077,
+        "mean_us": 3029.3706363636365
+      }
+    }
+  }
+]

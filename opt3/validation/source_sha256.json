@@ -1,0 +1,8 @@
+{
+  "Core/Src/pubsub_app.c": "f13921a876f3725bc5cc74dd6da485c63b6e22c42783e0c066e5c8d0a4ef2d29",
+  "Core/Src/freertos_mpu_demo.c": "8c8f5525f0b8a3b5848bc7356fdcd1b19c86931ed73ae729bfb9ece86760de50",
+  "Core/Src/worker_domain.S": "ea7e726251cd85bd27e226f4ef11ff5df5f1d408a30e39d970b7cf49d33e68ae",
+  "Core/Inc/benchmark_config.h": "e1f792d75fe9eb77631c19af383747151526350541e258bb868dbfd83f019cd5",
+  "tools/sfi_verify.py": "7506c7691f461cb593c94c2294107072c4f560379668e0ed5d9768bd457c166f",
+  "tools/verify_worker.py": "0396953e6807e66da651d7c20da198c008ca4459f04eff2d43a645e742926407"
+}

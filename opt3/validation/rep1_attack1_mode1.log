@@ -1,0 +1,129 @@
+0000856 I Target type is cortex_m [board]
+0000873 I DP IDR = 0x0be12477 (v2 MINDP rev0) [dap]
+0000881 I AHB5-AP#0 IDR = 0x14770015 (AHB5-AP var1 rev1) [discovery]
+0000884 I AHB5-AP#0 Class 0x1 ROM table #0 @ 0xe00fe000 (designer=020:ST part=472) [rom_table]
+0000887 I [0]<e00ff000:ROM class=1 designer=43b:Arm part=4c9> [rom_table]
+0000887 I   AHB5-AP#0 Class 0x1 ROM table #1 @ 0xe00ff000 (designer=43b:Arm part=4c9) [rom_table]
+0000890 I   [0]<e000e000:SCS M33 class=9 designer=43b:Arm part=d21 devtype=00 archid=2a04 devid=0:0:0> [rom_table]
+0000893 I   [1]<e0001000:DWT M33 class=9 designer=43b:Arm part=d21 devtype=00 archid=1a02 devid=0:0:0> [rom_table]
+0000895 I   [2]<e0002000:BPU M33 class=9 designer=43b:Arm part=d21 devtype=00 archid=1a03 devid=0:0:0> [rom_table]
+0000898 I   [3]<e0000000:ITM M33 class=9 designer=43b:Arm part=d21 devtype=43 archid=1a01 devid=0:0:0> [rom_table]
+0000900 I   [5]<e0041000:ETM M33 class=9 designer=43b:Arm part=d21 devtype=13 archid=4a13 devid=0:0:0> [rom_table]
+0000903 I   [6]<e0042000:CTI M33 class=9 designer=43b:Arm part=d21 devtype=14 archid=1a14 devid=40800:0:0> [rom_table]
+0000905 I [1]<e0040000:TPIU M33 class=9 designer=43b:Arm part=d21 devtype=11 archid=0000 devid=ca1:0:0> [rom_table]
+0000915 I CPU core #0: Cortex-M33 r0p2, v8.0-M architecture [cortex_m]
+0000915 I   Extensions: [DSP, FPU, FPU_V5, MPU] [cortex_m]
+0000915 I   FPU present: FPv5-SP-D16-M [cortex_m]
+0000917 I 4 hardware watchpoints [dwt]
+0000920 I 8 hardware breakpoints, 1 literal comparators [fpb]
+0000971 I 3 up channels and 3 down channels found [rtt_cmd]
+0000971 I Reading from up channel 0 ("Terminal") [rtt_cmd]
+0000972 I Writing to down channel 0 ("Terminal") [rtt_cmd]
+[TRIM] mask=15 mpu_only=1 reg_reuse=1 current_mpu_inline=1
+[BUILD] variant=app_sfi compiler_optimized=1
+[FIX] trusted_middleware_clock=1 extended_fault_frame=1
+[TUNE] stage=14 frame26=1 svc_O3=0 mair_equal_skip=0 active_lookup=1
+[FLOW] requests_per_iteration=6 sub_receive_on_wake=1 pub_publish_returns=1 callback_mpu_unprivileged=0
+[OPT2] fast_paths=1 (0=previous, 1=optimized)
+[WORKLOAD] direct_read_each_iteration=1 same_apps=1
+[LOWFAT SELFTEST] base/size/bounds/realloc/free PASS
+[DOMAIN] actual_pub_sub_apps; own_object+own_stack; trusted_middleware_syscall; C_apps
+[FAST3] enabled=0 kernel_O3=0 trusted_allocator_mutex=0 systick_fix=1
+[FAST3 WORKER] trusted_dispatch=0 static_lifetime=1
+[LAYOUT] adjacent_32_byte_slots=PASS
+[CORE] repeated_bounds=0 synthetic_alloc=0 periodic_read_in_timing=1 diagnostic_probes_outside_timing=1
+
+[COMPARE] mode=1 LowFat=1 MPU=0 SFI=0 subscribers=4 CPU_Hz=110000000 warmup=10 samples=100
+PUB=20031000 object_bytes=32 allocator_pool_bytes=53248
+SUB1=20031020 data=20031020
+SUB2=20031040 data=20031040
+SUB3=20031060 data=20031060
+SUB4=20031080 data=20031080
+allocator_init_cycles=374493 object_alloc_cycles=3600 timer_pair_cycles=15
+[micro-ROS] Waiting for agent...
+ROS_setup_allocator_calls=31 max_request=200 failures=0
+[BENCH] Running warmup + samples; no per-message RTT output.
+[WARMUP 1] PUB start
+[CLOCK] app=0 syscall_clock_advances=PASS
+[WARMUP 1] PUB done
+[WARMUP 1] SUB1 start
+[CLOCK] app=1 syscall_clock_advances=PASS
+[WARMUP 1] SUB1 done
+[WARMUP 1] SUB2 start
+[CLOCK] app=2 syscall_clock_advances=PASS
+[WARMUP 1] SUB2 done
+[WARMUP 1] SUB3 start
+[CLOCK] app=3 syscall_clock_advances=PASS
+[WARMUP 1] SUB3 done
+[WARMUP 1] SUB4 start
+[CLOCK] app=4 syscall_clock_advances=PASS
+[WARMUP 1] SUB4 done
+[WARMUP DONE] normal_exchange=PASS
+[ISOLATION PRE] PUB -> SUB1 address=20031020 READ ALLOWED PASS
+  value=10
+[ISOLATION PRE] PUB -> SUB2 address=20031040 READ ALLOWED PASS
+  value=10
+[ISOLATION PRE] PUB -> SUB3 address=20031060 READ ALLOWED PASS
+  value=10
+[ISOLATION PRE] PUB -> SUB4 address=20031080 READ ALLOWED PASS
+  value=10
+[POLICY] app=0 own_object/stack=ALLOW other_object/stack/kernel=ALLOW READ+WRITE PASS
+[POLICY] app=1 own_object/stack=ALLOW other_object/stack/kernel=ALLOW READ+WRITE PASS
+[POLICY] app=2 own_object/stack=ALLOW other_object/stack/kernel=ALLOW READ+WRITE PASS
+[POLICY] app=3 own_object/stack=ALLOW other_object/stack/kernel=ALLOW READ+WRITE PASS
+[POLICY] app=4 own_object/stack=ALLOW other_object/stack/kernel=ALLOW READ+WRITE PASS
+
+CSV,mode,subscribers,metric,count,min_cycles,mean_cycles,max_cycles,mean_us,total_cycles,total_us
+CSV,1,4,iteration_total,100,2084491,4061721,22556957,36924.741,406172154,3692474.127
+CSV,1,4,pub_dispatch_excluding_middleware,100,2738,2916,3433,26.516,291677,2651.609
+CSV,1,4,sub_dispatch_excluding_middleware,100,8699,9521,10849,86.561,952177,8656.154
+CSV,1,4,all_dispatch_excluding_middleware,100,11483,12438,13768,113.077,1243854,11307.763
+CSV,1,4,receive_internal_total,100,808661,1869198,20283075,16992.713,186919849,1699271.354
+CSV,1,4,middleware_internal_total,100,2068872,4047500,22543569,36795.461,404750074,3679546.127
+CSV,1,4,sub1_dispatch_excluding_middleware,100,2324,2535,3342,23.051,253569,2305.172
+CSV,1,4,sub2_dispatch_excluding_middleware,100,2125,2377,2891,21.609,237701,2160.918
+CSV,1,4,sub3_dispatch_excluding_middleware,100,2125,2337,2890,21.252,233780,2125.272
+CSV,1,4,sub4_dispatch_excluding_middleware,100,2125,2271,2880,20.647,227127,2064.790
+CSV,1,4,app_execution_total_excluding_middleware,100,2766,3063,3771,27.845,306305,2784.590
+CSV,1,4,pub_app_excluding_middleware,100,943,1030,1481,9.369,103063,936.936
+CSV,1,4,sub1_app_excluding_middleware,100,513,562,1228,5.111,56229,511.172
+CSV,1,4,sub2_app_excluding_middleware,100,423,506,560,4.605,50659,460.536
+CSV,1,4,sub3_app_excluding_middleware,100,423,494,967,4.492,49422,449.290
+CSV,1,4,sub4_app_excluding_middleware,100,423,469,815,4.266,46932,426.654
+CSV,1,4,publisher_task_roundtrip,100,867753,2181219,5607883,19829.263,218121902,1982926.381
+CSV,1,4,publish_call,100,864888,2178302,5604481,19802.747,217830225,1980274.772
+CSV,1,4,subscriber_tasks_total,100,817369,1878720,20292048,17079.275,187872026,1707927.509
+CSV,1,4,pub_request_to_all_done,100,2084419,4061649,22556885,36924.088,406164969,3692408.809
+CSV,1,4,sub1_task,100,159024,705335,19620784,6412.138,70533520,641213.818
+SUB1 received=100/100
+CSV,1,4,sub2_task,100,217896,331860,2749488,3016.912,33186042,301691.290
+SUB2 received=100/100
+CSV,1,4,sub3_task,100,218382,489690,18479308,4451.733,48969070,445173.363
+SUB3 received=100/100
+CSV,1,4,sub4_task,100,219271,351833,1197805,3198.490,35183394,319849.036
+SUB4 received=100/100
+warmup_errors=0 publish_errors=0 rx_timeouts=0 worker_errors=0 spin_errors=0 unexpected_rx=0
+allocator malloc=30 calloc=10 realloc=8 free=22 failures=0 invalid_frees=0 max_request=200
+[ISOLATION POST] PUB -> SUB1 address=20031020 READ ALLOWED PASS
+  value=110
+[ISOLATION POST] PUB -> SUB2 address=20031040 READ ALLOWED PASS
+  value=110
+[ISOLATION POST] PUB -> SUB3 address=20031060 READ ALLOWED PASS
+  value=110
+[ISOLATION POST] PUB -> SUB4 address=20031080 READ ALLOWED PASS
+  value=110
+[RECOVERY] normal_exchange=PASS
+[STACK] app=0 unused_app_bytes=3240 unused_syscall_bytes=0 PASS
+[STACK] app=1 unused_app_bytes=3144 unused_syscall_bytes=0 PASS
+[STACK] app=2 unused_app_bytes=3080 unused_syscall_bytes=0 PASS
+[STACK] app=3 unused_app_bytes=3128 unused_syscall_bytes=0 PASS
+[STACK] app=4 unused_app_bytes=3148 unused_syscall_bytes=0 PASS
+[APP FLOW] publish_calls=111 receive_calls=444 expected_rounds=111 same_task_gate=PASS
+[SERVICE COUNT] measured_io=500 measured_done=500 expected_each=500 PASS
+[GATE COUNT] measured_entries=600 total=600 per_iteration=6 bootstrap_excluded=1 PASS
+[DIRECT READ] measured=100 blocked=0 total_with_warmup_recovery=111 actual_rx_buffer=1 in_timing=1 PASS
+[DIRECT TARGET] SUB1 measured=25
+[DIRECT TARGET] SUB2 measured=25
+[DIRECT TARGET] SUB3 measured=25
+[DIRECT TARGET] SUB4 measured=25
+[BENCH DONE] mode=1 subscribers=4 valid=YES (reset to repeat)

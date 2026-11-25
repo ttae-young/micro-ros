@@ -17,7 +17,7 @@
 
 static uint8_t it_buffer[UART_IT_BUFFER_SIZE];
 static uint8_t it_data;
-static size_t it_head = 0, it_tail = 0;
+static volatile size_t it_head = 0, it_tail = 0;
 
 
 bool cubemx_transport_open(struct uxrCustomTransport * transport){
@@ -61,11 +61,13 @@ size_t cubemx_transport_read(struct uxrCustomTransport* transport, uint8_t* buf,
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-    if(it_tail == UART_IT_BUFFER_SIZE)
-        it_tail = 0;
-
-    it_buffer[it_tail] = it_data;
-    it_tail++;
+    size_t tail = it_tail;
+    size_t next = (tail + 1U) % UART_IT_BUFFER_SIZE;
+    /* Keep both indices in range and reserve one slot to distinguish full from empty. */
+    if (next != it_head) {
+        it_buffer[tail] = it_data;
+        it_tail = next;
+    }
 
     HAL_UART_Receive_IT(huart, &it_data, 1);
 }

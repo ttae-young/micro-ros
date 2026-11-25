@@ -18,7 +18,8 @@
 #include <rclc/executor.h>
 #include <rmw_microros/rmw_microros.h>
 #include <rcutils/allocator.h>
-#include <std_msgs/msg/int32.h>
+#include <std_msgs/msg/u_int32_multi_array.h>
+#include "bench_payload.h"
 #include <uxr/client/transport.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -31,20 +32,6 @@ extern int clock_gettime(int clock_id, struct timespec *tp);
 
 #define WORKER_STACK_WORDS 1024U
 #define MICROROS_STACK_WORDS 4096U
-typedef struct {
-    std_msgs__msg__Int32 message;
-    volatile int32_t worker_value;
-    uint32_t processed, last_value, reserved;
-    uint32_t probe_target, probe_result;
-    volatile uint32_t command;
-} publisher_region_t;
-typedef struct {
-    std_msgs__msg__Int32 message;
-    volatile int32_t worker_value;
-    uint32_t processed, last_value, reserved;
-    uint32_t probe_target, probe_result;
-    volatile uint32_t command;
-} subscriber_region_t;
 typedef struct { uint64_t sum; uint32_t n, min, max; } statistics_t;
 extern UART_HandleTypeDef hlpuart1;
 bool cubemx_transport_open(struct uxrCustomTransport *);
@@ -56,23 +43,16 @@ void microros_deallocate(void *, void *);
 void *microros_reallocate(void *, size_t, void *);
 void *microros_zero_allocate(size_t, size_t, void *);
 
-_Static_assert(sizeof(publisher_region_t) <= BENCH_OBJECT_BYTES, "PUB exceeds MPU slot");
-_Static_assert(sizeof(subscriber_region_t) <= BENCH_OBJECT_BYTES, "SUB exceeds MPU slot");
-_Static_assert(BENCH_OBJECT_BYTES == 32, "Worker policy requires exact 32-byte objects");
-_Static_assert(sizeof(publisher_region_t) == 32 && sizeof(subscriber_region_t) == 32, "fixed worker ABI");
-_Static_assert(offsetof(publisher_region_t,message)==0 && offsetof(publisher_region_t,worker_value)==4, "PUB ABI");
-_Static_assert(offsetof(subscriber_region_t,message)==0 && offsetof(subscriber_region_t,worker_value)==4, "SUB ABI");
-_Static_assert(offsetof(publisher_region_t,probe_target)==20 && offsetof(subscriber_region_t,probe_target)==20, "stack ABI");
-_Static_assert(offsetof(publisher_region_t,probe_result)==24 && offsetof(subscriber_region_t,probe_result)==24, "stack end ABI");
-_Static_assert(offsetof(publisher_region_t,command)==28 && offsetof(subscriber_region_t,command)==28, "command ABI");
 static statistics_t g_bounds_stats, g_iteration_stats;
 static uint32_t g_init_cycles, g_ros_alloc_calls;
 static void create_workers(void);
-static publisher_region_t *g_pub;
-static subscriber_region_t *g_sub[BENCH_SUBSCRIBERS];
+static app_object_t *g_pub;
+static app_object_t *g_sub[BENCH_SUBSCRIBERS];
 /* Workers own payloads, NOT pointer-bearing middleware handles. A corrupted
  * payload cannot redirect privileged rcl calls through a forged handle. */
 static rcl_node_t g_pub_node PRIVILEGED_DATA;
+static std_msgs__msg__UInt32MultiArray g_pub_wire PRIVILEGED_DATA;
+static std_msgs__msg__UInt32MultiArray g_sub_wire[BENCH_SUBSCRIBERS] PRIVILEGED_DATA;
 static rcl_publisher_t g_publisher PRIVILEGED_DATA;
 static rcl_subscription_t g_subscriptions[BENCH_SUBSCRIBERS] PRIVILEGED_DATA;
 static rcl_node_t g_sub_node;
@@ -216,9 +196,9 @@ static void prepare_direct_read(void)
     if(g_direct_pending || g_probe.armed || SCB->CFSR || SCB->HFSR)
         fatal("stale direct read",0);
     g_direct_index=(g_expected_sequence-1U)%BENCH_SUBSCRIBERS;
-    g_direct_original=(uint32_t)g_sub[g_direct_index]->message.data;
+    g_direct_original=(uint32_t)g_sub[g_direct_index]->payload[0];
     g_probe.blocked=g_probe.fault_pc=g_probe.cfsr=g_probe.control=0;
-    g_probe.target=(uintptr_t)&g_sub[g_direct_index]->message.data;
+    g_probe.target=(uintptr_t)&g_sub[g_direct_index]->payload[0];
     g_probe.task=(uintptr_t)&g_worker_tcb;
     g_probe.stack_begin=(uintptr_t)g_worker_stack;
     g_probe.stack_end=(uintptr_t)(g_worker_stack+WORKER_STACK_WORDS);
@@ -234,7 +214,7 @@ static void finish_direct_read(void)
 {
     __DMB();
     bool ok=g_pub->probe_target==g_probe.target &&
-        (uint32_t)g_sub[g_direct_index]->message.data==g_direct_original &&
+        (uint32_t)g_sub[g_direct_index]->payload[0]==g_direct_original &&
         SCB->CFSR==0 && SCB->HFSR==0;
     if(BENCH_MPU_ENABLED || BENCH_SFI_ENABLED)
         ok=ok && g_probe.blocked==1 && !g_probe.armed && g_pub->probe_result==DOMAIN_BLOCKED;
@@ -259,7 +239,7 @@ static void notify_worker(uint32_t i)
     g_active=-1;
 }
 static void notify_publisher(void) { notify_worker(0); }
-static uint32_t *worker_object(uint32_t i) { return (uint32_t *)(i == 0 ? (void *)g_pub : (void *)g_sub[i-1]); }
+static app_object_t *worker_object(uint32_t i) { return i == 0 ? g_pub : g_sub[i-1]; }
 static StackType_t *worker_stack(uint32_t i) { return i == 0 ? g_worker_stack : g_sub_stacks[i-1]; }
 static StaticTask_t *worker_tcb(uint32_t i) { return i == 0 ? &g_worker_tcb : &g_sub_tcbs[i-1]; }
 /* Closed-app SFI trusted runtime. Native app code cannot access this metadata:
@@ -324,9 +304,8 @@ __attribute__((noinline)) uint32_t sfi_probe_write(uintptr_t address,uint32_t va
  * Rejection/expected fault recovery is OUTSIDE all timed windows. */
 static uint32_t probe(uint32_t who, volatile uint32_t *target, bool write, bool foreign)
 {
-    volatile uint32_t *o=worker_object(who);
-    unsigned msg=0U, result=1U;
-    uint32_t saved_msg=o[msg], saved_result=o[result], saved_command=o[7];
+    volatile app_object_t *o=worker_object(who);
+    uint32_t saved_msg=o->payload[0], saved_result=o->result, saved_command=o->command;
     uint32_t original=*target;
     bool deny=foreign && (BENCH_MPU_ENABLED || BENCH_SFI_ENABLED);
     if (SCB->CFSR || SCB->HFSR) fatal("stale fault", 0);
@@ -337,31 +316,31 @@ static uint32_t probe(uint32_t who, volatile uint32_t *target, bool write, bool 
     g_probe.stack_end=g_probe.stack_begin+WORKER_STACK_WORDS*sizeof(StackType_t);
     g_probe.expected_pc=(uintptr_t)(who==0 ? (write ? pub_store_site : pub_load_site) : (write ? sub_store_site : sub_load_site));
     g_probe.recovery_pc=(uintptr_t)(who==0 ? pub_commit_site : sub_commit_site);
-    o[msg]=(uintptr_t)target;
-    o[result]=0x13572468U;
-    o[7]=write ? DOMAIN_WRITE : DOMAIN_READ;
+    o->payload[0]=(uintptr_t)target;
+    o->result=0x13572468U;
+    o->command=write ? DOMAIN_WRITE : DOMAIN_READ;
     g_probe.armed=deny && BENCH_MPU_ENABLED;
     __DMB();
     notify_worker(who);
     __DMB();
     g_probe.armed=0;
-    uint32_t status=o[7], value=o[result];
+    uint32_t status=o->command, value=o->result;
     bool ok=deny ? (status==DOMAIN_DENIED && value==DOMAIN_BLOCKED && *target==original) :
         (status==DOMAIN_DONE && (write ? (*target==0x13572468U && value==DOMAIN_WRITE_OK) : value==original));
     if ((BENCH_MPU_ENABLED || BENCH_SFI_ENABLED) && deny) ok=ok && g_probe.blocked==1;
     else ok=ok && g_probe.blocked==0 && SCB->CFSR==0 && SCB->HFSR==0;
     /* Only safe allocated diagnostic words are ever written; restore immediately. */
     if (write && !deny) *target=original;
-    o[msg]=saved_msg; o[result]=saved_result; o[7]=saved_command;
+    o->payload[0]=saved_msg; o->result=saved_result; o->command=saved_command;
     if (!ok) fatal("worker policy probe", (int32_t)who);
     return value;
 }
 static void isolation_test(const char *phase)
 {
     for (uint32_t i=0; i<BENCH_SUBSCRIBERS; ++i) {
-        uint32_t value=probe(0,(volatile uint32_t *)&g_sub[i]->message.data,false,true);
+        uint32_t value=probe(0,(volatile uint32_t *)&g_sub[i]->payload[0],false,true);
         SEGGER_RTT_printf(0,"[ISOLATION %s] PUB -> SUB%u address=%p %s PASS\n",phase,i+1U,
-            (void *)&g_sub[i]->message.data, BENCH_MPU_ENABLED ? "BLOCKED BY MPU" :
+            (void *)&g_sub[i]->payload[0], BENCH_MPU_ENABLED ? "BLOCKED BY MPU" :
             (BENCH_SFI_ENABLED ? "BLOCKED BY APP SFI" : "READ ALLOWED"));
         if (!(BENCH_MPU_ENABLED || BENCH_SFI_ENABLED)) SEGGER_RTT_printf(0,"  value=%lu\n",(unsigned long)value);
         ++g_probe_passes;
@@ -378,15 +357,15 @@ static void policy_test(void)
     for (uint32_t who=0; who<=BENCH_SUBSCRIBERS; ++who) {
         /* Reserved +8 is ordinary payload data, with no kernel/middleware
          * pointers. Stack probes use a checked unused bottom-stack word. */
-        probe(who,worker_object(who)+2,false,false);
-        probe(who,worker_object(who)+2,true,false);
+        probe(who,&worker_object(who)->processed,false,false);
+        probe(who,&worker_object(who)->processed,true,false);
         probe(who,(volatile uint32_t *)(worker_stack(who)+16),false,false);
         probe(who,(volatile uint32_t *)(worker_stack(who)+16),true,false);
         probe(who,&g_policy_canary,false,true);
         probe(who,&g_policy_canary,true,true);
         for (uint32_t peer=0; peer<=BENCH_SUBSCRIBERS; ++peer) if (peer!=who) {
-            probe(who,worker_object(peer)+2,false,true);
-            probe(who,worker_object(peer)+2,true,true);
+            probe(who,&worker_object(peer)->processed,false,true);
+            probe(who,&worker_object(peer)->processed,true,true);
             probe(who,(volatile uint32_t *)(worker_stack(peer)+16),false,true);
             probe(who,(volatile uint32_t *)(worker_stack(peer)+16),true,true);
         }
@@ -399,7 +378,9 @@ static void policy_test(void)
  * in the subscriber task's unprivileged domain. It is in pubsub_app.c. */
 static void transport_callback(const void *message)
 {
-    for(unsigned i=0;i<BENCH_SUBSCRIBERS;i++) if(message==&g_sub[i]->message) {
+    for(unsigned i=0;i<BENCH_SUBSCRIBERS;i++) if(message==&g_sub_wire[i]) {
+        if(g_sub_wire[i].data.size != BENCH_PAYLOAD_WORDS || g_sub_wire[i].data.data != g_sub[i]->payload)
+            fatal("received payload length or storage",i);
         if(g_rx_ready[i]) fatal("duplicate transport callback",i);
         g_rx_ready[i]=true; return;
     }
@@ -426,7 +407,7 @@ uint32_t app_gate_impl(uint32_t op)
         if(current==(TaskHandle_t)worker_tcb(i)) { who=i; break; }
 #endif
     if(who>BENCH_SUBSCRIBERS) fatal("unauthorized gate caller",op);
-    volatile uint32_t *o=worker_object(who);
+    volatile app_object_t *o=worker_object(who);
     if(op==APP_RECEIVE) fatal("separate receive forbidden",who);
     if(g_measured) ++g_measured_gate_entries; /* Actual app entry, never a wake-up. */
     if(op==APP_WAIT) {
@@ -435,7 +416,7 @@ uint32_t app_gate_impl(uint32_t op)
         ulTaskNotifyTake(pdTRUE,portMAX_DELAY);
         if(g_active!=(int)who) fatal("wrong task awakened",who);
         g_app_start[who]=cycles();
-        if(who==0 || o[7]==DOMAIN_READ || o[7]==DOMAIN_WRITE) return 0;
+        if(who==0 || o->command==DOMAIN_READ || o->command==DOMAIN_WRITE) return 0;
         /* Same authenticated SUB task resumes in its protected syscall stack.
          * Diagnostic requests must never receive a message. */
         op=APP_RECEIVE;
@@ -445,9 +426,9 @@ uint32_t app_gate_impl(uint32_t op)
     if(op==APP_DONE_WAIT) {
         if(who==0 && g_direct_pending) finish_direct_read();
         if(g_measured) ++g_measured_done_wait_calls;
-        if ((o[4]&1U)!=(BENCH_MPU_ENABLED?1U:0U)) fatal("wrong application privilege",who);
+        if ((o->reserved&1U)!=(BENCH_MPU_ENABLED?1U:0U)) fatal("wrong application privilege",who);
         g_app_cycles[who]=cycles()-g_app_start[who]-g_middleware_cycles[who];
-        if(o[7]==DOMAIN_DONE && o[0]==g_expected_sequence) ++g_gate_normal_done;
+        if(o->command==DOMAIN_DONE && o->payload[0]==g_expected_sequence) ++g_gate_normal_done;
         g_done=true;
         xTaskNotifyGive(g_controller);
         /* Stay in the SAME syscall while blocked. Next request resumes here;
@@ -455,14 +436,14 @@ uint32_t app_gate_impl(uint32_t op)
         ulTaskNotifyTake(pdTRUE,portMAX_DELAY);
         if(g_active!=(int)who || g_done) fatal("wrong fused wakeup",who);
         g_app_start[who]=cycles();
-        if(who==0 || o[7]==DOMAIN_READ || o[7]==DOMAIN_WRITE) return 0;
+        if(who==0 || o->command==DOMAIN_READ || o->command==DOMAIN_WRITE) return 0;
         /* Same authenticated SUB task resumes in its protected syscall stack.
          * Diagnostic requests must never receive a message. */
         op=APP_RECEIVE;
         goto dispatch_io;
     }
 dispatch_io:
-    if(o[7]!=DOMAIN_NORMAL) fatal("communication during diagnostic",op);
+    if(o->command!=DOMAIN_NORMAL) fatal("communication during diagnostic",op);
     if(g_measured) ++g_measured_io_calls;
     /* One-time check in the real caller's syscall context; warmup only. */
     static bool clock_checked[BENCH_SUBSCRIBERS+1];
@@ -482,15 +463,15 @@ dispatch_io:
         ++g_gate_pub_calls;
         /* Publisher application supplied its OWN payload by writing its object.
          * Gate has no caller-provided pointer, handle, index, or callback. */
-        rc=rcl_publish(&g_publisher,&g_pub->message,NULL);
+        rc=rcl_publish(&g_publisher,&g_pub_wire,NULL);
         uint32_t elapsed=cycles()-start;
         g_middleware_cycles[who]+=elapsed;
         if(g_measured) add(&g_publish_stats,elapsed);
         if(rc!=RCL_RET_OK) ++g_publish_errors;
-        o[1]=rc==RCL_RET_OK?0U:1U;
+        o->result=rc==RCL_RET_OK?0U:1U;
         if(BENCH_DIRECT_READ) prepare_direct_read();
         /* Ordinary publish return: the actual PUB application now reads SUB. */
-        return o[1];
+        return o->result;
     }
     if(op==APP_RECEIVE && who>0) {
         unsigned i=who-1; ++g_gate_sub_calls;
@@ -518,7 +499,7 @@ static void run_one(bool measured)
     uint32_t start=cycles(); notify_publisher();
     if(g_sequence==1) SEGGER_RTT_WriteString(0,"[WARMUP 1] PUB done\n");
     uint32_t elapsed=cycles()-start;
-    if(g_pub->command!=DOMAIN_DONE || g_pub->message.data!=g_sequence || g_pub->worker_value!=0)
+    if(g_pub->command!=DOMAIN_DONE || g_pub->payload[0]!=g_sequence || g_pub->result!=0)
         ++g_worker_errors;
     if(measured) { add(&g_worker_stats,elapsed); add(&g_app_stats[0],g_app_cycles[0]); }
     uint32_t app_total=g_app_cycles[0],sub_total=0;
@@ -529,7 +510,7 @@ static void run_one(bool measured)
         if(g_sequence==1) SEGGER_RTT_printf(0,"[WARMUP 1] SUB%u start\n",i+1);
         start=cycles(); notify_worker(i+1); elapsed=cycles()-start;
         if(g_sequence==1) SEGGER_RTT_printf(0,"[WARMUP 1] SUB%u done\n",i+1);
-        if(g_sub[i]->command!=DOMAIN_DONE || g_sub[i]->worker_value!=g_sequence ||
+        if(g_sub[i]->command!=DOMAIN_DONE || g_sub[i]->result!=g_sequence ||
            g_sub[i]->processed!=(uint32_t)g_sequence || g_sub[i]->last_value!=(uint32_t)g_sequence)
             ++g_worker_errors;
         else g_seen|=1U<<i;
@@ -548,6 +529,11 @@ static void run_one(bool measured)
         add(&g_e2e_stats,cycles()-iteration_start); add(&g_iteration_stats,cycles()-iteration_start);
     }
     g_measured=false;
+    /* Verify even the first-word workload, after both elapsed-time windows close. */
+    for (unsigned i=0; i<BENCH_SUBSCRIBERS; ++i)
+        for (unsigned j=0; j<BENCH_PAYLOAD_WORDS; ++j)
+            if (g_sub[i]->payload[j] != (uint32_t)g_sequence+j)
+                fatal("payload word mismatch",i);
     vTaskDelay(pdMS_TO_TICKS(BENCH_PAUSE_MS));
 }
 static void report_stack_margin(void)
@@ -616,8 +602,16 @@ static void micro_ros_task(void *argument)
         }
     }
     for(unsigned i=0;i<BENCH_SUBSCRIBERS;i++)
-        if((uintptr_t)g_sub[i]!=(uintptr_t)g_pub+32U*(i+1)) fatal("non-contiguous LowFat slots",i);
-    SEGGER_RTT_WriteString(0,"[LAYOUT] adjacent_32_byte_slots=PASS\n");
+        if((uintptr_t)g_sub[i]!=(uintptr_t)g_pub+BENCH_OBJECT_BYTES*(i+1)) fatal("non-contiguous LowFat slots",i);
+    SEGGER_RTT_WriteString(0,"[LAYOUT] adjacent_128_byte_slots=PASS\n");
+    g_pub_wire.data.data = g_pub->payload;
+    g_pub_wire.data.size = g_pub_wire.data.capacity = BENCH_PAYLOAD_WORDS;
+    for (unsigned i=0; i<BENCH_SUBSCRIBERS; ++i) {
+        g_sub_wire[i].data.data = g_sub[i]->payload;
+        g_sub_wire[i].data.capacity = BENCH_PAYLOAD_WORDS;
+    }
+    SEGGER_RTT_printf(0,"[PAYLOAD] bytes=%u check_all=%u slot_bytes=%u type=UInt32MultiArray\n",
+        BENCH_PAYLOAD_BYTES, BENCH_CHECK_ALL_WORDS, BENCH_OBJECT_BYTES);
     create_workers();
     SEGGER_RTT_printf(0, "[CORE] repeated_bounds=%d synthetic_alloc=0 periodic_read_in_timing=%u diagnostic_probes_outside_timing=1\n", BENCH_VALIDATE_EACH_MESSAGE,BENCH_DIRECT_READ);
     SEGGER_RTT_printf(0, "\n[COMPARE] mode=%d LowFat=%d MPU=%d SFI=%d subscribers=%d CPU_Hz=%lu warmup=%u samples=%u\n",
@@ -626,7 +620,7 @@ static void micro_ros_task(void *argument)
     SEGGER_RTT_printf(0, "PUB=%p object_bytes=%u allocator_pool_bytes=%u\n", (void *)g_pub,
         BENCH_OBJECT_BYTES, BENCH_LOWFAT_ENABLED ? LOWFAT_NUM_REGIONS * LOWFAT_REGION_SIZE : 65536U);
     for (uint32_t i = 0; i < BENCH_SUBSCRIBERS; ++i)
-        SEGGER_RTT_printf(0, "SUB%u=%p data=%p\n", i + 1U, (void *)g_sub[i], (void *)&g_sub[i]->message.data);
+        SEGGER_RTT_printf(0, "SUB%u=%p data=%p\n", i + 1U, (void *)g_sub[i], (void *)&g_sub[i]->payload[0]);
     SEGGER_RTT_printf(0, "allocator_init_cycles=%lu object_alloc_cycles=%lu timer_pair_cycles=%lu\n",
         (unsigned long)g_init_cycles, (unsigned long)g_layout_cycles, (unsigned long)g_timer_cycles);
     bench_allocator_stats_t before_ros = bench_allocator_stats();
@@ -648,16 +642,16 @@ static void micro_ros_task(void *argument)
     CHECK_RCL(rclc_node_init_default(&g_pub_node, "node_a", "", &g_support), "Node A");
     CHECK_RCL(rclc_node_init_default(&g_sub_node, "node_b", "", &g_support), "Node B");
     CHECK_RCL(rclc_publisher_init_default(&g_publisher, &g_pub_node,
-        ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32), "shared_int32_topic"), "publisher");
+        ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, UInt32MultiArray), "bench_uint32_payload"), "publisher");
 
     for (uint32_t i = 0; i < BENCH_SUBSCRIBERS; ++i) {
         g_subscriptions[i] = rcl_get_zero_initialized_subscription();
         CHECK_RCL(rclc_subscription_init_default(&g_subscriptions[i], &g_sub_node,
-            ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32), "shared_int32_topic"), "subscription");
+            ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, UInt32MultiArray), "bench_uint32_payload"), "subscription");
         g_executors[i]=rclc_executor_get_zero_initialized_executor();
         CHECK_RCL(rclc_executor_init(&g_executors[i],&g_support.context,1,&allocator),"executor");
         CHECK_RCL(rclc_executor_add_subscription(&g_executors[i], &g_subscriptions[i],
-            &g_sub[i]->message, transport_callback, ON_NEW_DATA), "add subscription");
+            &g_sub_wire[i], transport_callback, ON_NEW_DATA), "add subscription");
     }
     bench_allocator_stats_t after_ros = bench_allocator_stats();
     g_ros_alloc_calls = after_ros.allocate_calls + after_ros.calloc_calls + after_ros.realloc_calls
@@ -674,7 +668,14 @@ static void micro_ros_task(void *argument)
     isolation_test("PRE");
     policy_test();
     g_publish_errors = g_timeouts = g_worker_errors = g_spin_errors = g_unexpected_rx = 0;
+    bench_allocator_stats_t before_samples = bench_allocator_stats();
     for (uint32_t i = 0; i < BENCH_SAMPLES; ++i) run_one(true);
+    bench_allocator_stats_t after_samples = bench_allocator_stats();
+    SEGGER_RTT_printf(0,"[MEASURED ALLOCATOR] malloc=%lu calloc=%lu realloc=%lu free=%lu\n",
+        (unsigned long)(after_samples.allocate_calls-before_samples.allocate_calls),
+        (unsigned long)(after_samples.calloc_calls-before_samples.calloc_calls),
+        (unsigned long)(after_samples.realloc_calls-before_samples.realloc_calls),
+        (unsigned long)(after_samples.free_calls-before_samples.free_calls));
     SEGGER_RTT_WriteString(0, "\nCSV,mode,subscribers,metric,count,min_cycles,mean_cycles,max_cycles,mean_us,total_cycles,total_us\n");
 
     print_stat("iteration_total", &g_iteration_stats);

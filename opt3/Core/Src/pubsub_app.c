@@ -4,12 +4,7 @@
 #include "worker_domain.h"
 #include <stdint.h>
 
-typedef struct {
-    volatile int32_t message, result;
-    volatile uint32_t processed,last_value,reserved;
-    volatile uint32_t probe_target,probe_result;
-    volatile uint32_t command;
-} app_object_t;
+#include "bench_payload.h"
 extern uint32_t app_gate(uint32_t op);
 extern uint32_t app_probe_read(uintptr_t address);
 extern uint32_t app_probe_write(uintptr_t address,uint32_t value);
@@ -25,33 +20,40 @@ extern void sfi_app_write32(uintptr_t address,uint32_t value);
 /* Field addresses are computed in C. MODE3 dereferences only in checked hooks.
  * Build verification rejects raw app loads/stores except bounded stack locals.
  */
-__attribute__((noinline,noclone)) static int diagnostic(app_object_t *o)
+__attribute__((noinline,noclone)) static int diagnostic(volatile app_object_t *o)
 {
     uint32_t command=READ(o,command),value;
     if(command!=DOMAIN_READ && command!=DOMAIN_WRITE) return 0;
-    value=command==DOMAIN_READ?app_probe_read((uintptr_t)(uint32_t)READ(o,message)):
-        app_probe_write((uintptr_t)(uint32_t)READ(o,message),(uint32_t)READ(o,result));
+    value=command==DOMAIN_READ?app_probe_read((uintptr_t)(uint32_t)READ(o,payload[0])):
+        app_probe_write((uintptr_t)(uint32_t)READ(o,payload[0]),(uint32_t)READ(o,result));
     WRITE(o,result,value);
     WRITE(o,command,value==DOMAIN_BLOCKED?DOMAIN_DENIED:DOMAIN_DONE);
     return 1;
 }
-__attribute__((noinline)) void subscriber_app_callback(app_object_t *o)
+__attribute__((noinline)) void subscriber_app_callback(volatile app_object_t *o)
 {
-    int32_t value=READ(o,message);
+    uint32_t value=READ(o,payload[0]);
+    uint32_t mismatch=0;
+#if BENCH_CHECK_ALL_WORDS
+    for (uint32_t i=1; i<BENCH_PAYLOAD_WORDS; ++i)
+        mismatch |= READ(o,payload[i]) ^ (value+i);
+#endif
     WRITE(o,result,value);
     WRITE(o,processed,READ(o,processed)+1U);
-    WRITE(o,last_value,(uint32_t)value);
+    WRITE(o,last_value,value ^ mismatch);
 }
 void publisher_app_task(void *argument)
 {
-    app_object_t *o=argument;
+    volatile app_object_t *o=argument;
     app_gate(APP_WAIT);
     for(;;) {
         uint32_t control;
         __asm volatile("mrs %0, control" : "=r"(control));
         WRITE(o,reserved,control);
         if(!diagnostic(o)) {
-            WRITE(o,message,READ(o,message)+1U);
+            uint32_t sequence=READ(o,payload[0])+1U;
+            for (uint32_t i=0; i<BENCH_PAYLOAD_WORDS; ++i)
+                WRITE(o,payload[i],sequence+i);
             uint32_t status=app_gate(APP_PUBLISH);
             if(BENCH_DIRECT_READ) {
                 uint32_t value=app_probe_read(READ(o,probe_target));
@@ -66,7 +68,7 @@ void publisher_app_task(void *argument)
 }
 void subscriber_app_task(void *argument)
 {
-    app_object_t *o=argument;
+    volatile app_object_t *o=argument;
     uint32_t status=app_gate(APP_WAIT);
     for(;;) {
         uint32_t control;

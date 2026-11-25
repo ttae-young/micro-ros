@@ -1,12 +1,29 @@
 # LowFat + 실제 PUB/SUB: baseline / MPU / SFI 비교
 
-프로젝트 이름: **freertos_app_sfi**. 기본값은 MODE 3(SFI), 직접 접근 포함입니다.
+프로젝트 이름: **freertos_app_payload**. 기본값은 MODE 3(SFI), 직접 접근 포함입니다.
+
+## 페이로드와 SUB 처리량 실험
+
+첫 조건은 64B이고 다음 조건은 80B, 96B입니다. `Core/Inc/benchmark_config.h`의 `BENCH_PAYLOAD_BYTES`로 선택합니다. 새 4B 대조군도 같은 배열 메시지 타입과 같은 슬롯 크기를 씁니다. 이전 Int32 실험은 메시지 타입과 슬롯 크기가 달랐습니다.
+
+| 설정 | 측정 중 SUB 작업 |
+|---|---|
+| `BENCH_CHECK_ALL_WORDS=0` | 첫 번째 32비트 단어에서 시퀀스를 읽고 기록 |
+| `BENCH_CHECK_ALL_WORDS=1` (기본) | 시퀀스를 기록하고 나머지 단어도 읽어 각 위치의 기대값과 대조 |
+
+PUB는 두 조건 모두 배열 전체를 생성해 한 번 발행합니다. 단어 값은 시퀀스에 단어 인덱스를 더한 값입니다. 매 반복 타이머를 닫은 뒤 제어 태스크가 SUB 네 개의 수신 데이터 전체를 대조합니다. 길이 또는 값이 맞지 않으면 해당 실행은 유효한 결과를 내지 않습니다.
+
+전송 타입은 `std_msgs/msg/UInt32MultiArray`이며 토픽은 `bench_uint32_payload`입니다. 빈 layout의 CDR 메타데이터 12B를 포함해 배열 데이터 64/80/96B는 각각 76/92/108B로 직렬화됩니다. XRCE와 직렬 프레임은 여기에 추가됩니다.
+
+같은 크기에서 먼저 MODE 1/2/3을 모두 실행하세요. 전체 오버헤드는 `pub_request_to_all_done` 행의 `mpu_mean_extra_us`, `sfi_mean_extra_us`입니다. 100회 누적 차이는 같은 행의 `mpu_total_extra_us`, `sfi_total_extra_us`입니다. 둘 다 동일 조건 baseline을 빼서 계산합니다. 통신 변동을 보려면 같은 조건을 반복하고 모드 실행 순서를 바꿔 보세요.
+
+가설은 같은 크기에서 CHECK_ALL_WORDS를 0과 1로 바꿔 확인합니다. 두 조건의 SFI 추가 시간이 얼마나 달라졌는지 비교하고, `app_execution_total_excluding_middleware`, `middleware_internal_total`, `[SFI COUNTS]`도 함께 보세요. 64B에서는 전체 검증 시 SUB 네 개가 반복당 60개 단어를 추가로 읽습니다. `[MEASURED ALLOCATOR]`는 측정 100회 루프 앞뒤의 할당자 콜백 카운터 차이입니다.
 
 ## 유지한 기능
 
 - 실제 micro-ROS Publisher 1개와 Subscription 4개가 같은 토픽으로 통신합니다. ROS Node는 2개입니다.
 - FreeRTOS PUB 애플리케이션 태스크 1개와 SUB 애플리케이션 태스크 4개를 실행합니다. Executor는 수신용 4개입니다.
-- PUB/SUB 객체는 각각 32바이트 LowFat 슬롯에 인접하게 배치됩니다. SUB의 객체 자체가 실제 등록된 수신 버퍼입니다.
+- PUB/SUB 객체는 각각 128바이트 LowFat 슬롯에 인접하게 배치됩니다. 각 SUB의 ROS 배열은 자기 슬롯 안의 payload를 수신 버퍼로 직접 사용합니다. 배열의 포인터와 길이를 담은 ROS 구조체는 신뢰 영역에 둡니다.
 - PUB는 발행 호출에서 돌아온 뒤 SUB 수신 버퍼를 직접 읽는 동작을 수행합니다. 대상은 SUB1~4 순환이며, 이번 SUB 수신 처리 전이므로 OFF에서는 직전 수신 값을 읽습니다.
 - 정상 통신, 자기 객체/스택 접근, 다른 앱의 객체/스택 및 커널 접근, 차단 후 정상 통신 복구를 검사합니다.
 - LowFat config 파일 및 allocator 콜백 연결은 그대로 유지했습니다. 전역 malloc을 모두 가로채는 구현이라는 뜻은 아닙니다.
@@ -66,39 +83,39 @@
 
 ## CubeIDE에서 빌드 및 실행
 
-1. ZIP을 풀고 `File > Import > General > Existing Projects into Workspace`에서 `freertos_app_sfi`를 Import합니다. `Copy projects into workspace`를 선택합니다.
+1. ZIP을 풀고 `File > Import > General > Existing Projects into Workspace`에서 `freertos_app_payload`를 Import합니다. `Copy projects into workspace`를 선택합니다.
 2. 기본 DIRECT_READ=1을 유지하고 MODE를 **1 → 2 → 3** 순서로 실행합니다. 설정을 바꿀 때마다 Save → Clean → Debug Build합니다. post-build 검증 PASS까지 확인합니다.
 3. Agent 창에서 한 번 실행합니다. 기존 Agent가 정상 동작 중이면 중복 실행하지 마세요.
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\YTY\STM32CubeIDE\workspace_2.2.0\freertos_app_sfi\1_start_agent.ps1"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\YTY\STM32CubeIDE\workspace_2.2.0\freertos_app_payload\1_start_agent.ps1"
 ```
 
 4. RTT 창에서 각 빌드마다 실행합니다. CubeIDE 디버그 및 기존 RTT는 종료된 상태여야 합니다.
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\YTY\STM32CubeIDE\workspace_2.2.0\freertos_app_sfi\2_flash_and_rtt.ps1"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\YTY\STM32CubeIDE\workspace_2.2.0\freertos_app_payload\2_flash_and_rtt.ps1"
 ```
 
 5. 세 모드 모두 `valid=YES` 후 같은 RTT 창에서 비교합니다.
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\YTY\STM32CubeIDE\workspace_2.2.0\freertos_app_sfi\3_compare_three.ps1" -DirectRead 1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\YTY\STM32CubeIDE\workspace_2.2.0\freertos_app_payload\3_compare_three.ps1" -PayloadBytes 64 -CheckAll 1 -DirectRead 1
 ```
 
-6. 정상 통신만 비교하려면 DIRECT_READ=0으로 바꾸고 MODE 1→2→3을 다시 빌드/실행한 뒤 위 비교 명령의 마지막 숫자를 0으로 바꿉니다.
+6. 정상 통신만 비교하려면 DIRECT_READ=0으로 바꾸고 MODE 1→2→3을 다시 빌드/실행한 뒤 위 비교 명령의 -DirectRead를 0으로 바꿉니다. 다른 크기와 처리량은 -PayloadBytes와 -CheckAll을 빌드 설정에 맞춥니다.
 
-결과: `logs/attack1_comparison.csv`, `logs/attack0_comparison.csv`.
+64B 기본 조건 결과는 `logs/payload64_check1_attack1_comparison.csv`에 저장됩니다.
 기본 Python 경로는 기존 환경인 `C:\Users\YTY\pyocd-win\Scripts\python.exe`입니다. SFI 검증에는 CubeIDE에 포함된 `arm-none-eabi-objdump.exe`를 사용합니다. 별도 LLVM 플러그인은 필요하지 않습니다.
 
 ## 결과 확인
 
-- 세 모드: LowFat self-test / 32-byte adjacency PASS, SUB1~4 각각 100/100, 오류 0, 복구 PASS.
+- 세 모드: LowFat self-test / 128-byte adjacency PASS, SUB1~4 각각 100/100, 오류 0, 복구 PASS.
 - 직접 읽기 포함: `[DIRECT READ] measured=100`, MODE1 blocked=0, MODE2/3 blocked=100, 각 SUB 25회.
 - 정상 통신만: `[DIRECT READ] measured=0 blocked=0`, PRE/POST 차단 검사는 여전히 PASS.
 - MODE3: `[SFI SCOPE] ... MPU=0`, `[SFI COUNTS]`의 실제 검사 횟수 확인.
 - `[GATE COUNT] measured_entries=600 ... per_iteration=6 ... PASS`.
 
-빌드·보드 결과와 검증기 음성 테스트 기록은 `validation/`에 포함합니다.
+`validation/`의 기존 보드 로그는 원래 4B Int32 실험의 기록입니다. 새 실험의 보드 측정 로그는 실행 시 `logs/`에 저장됩니다.
 
 추가 검증용 `tools/test_sfi_verifier.py`는 MODE3 ELF에서 우회 코드가 거부되는지 검사합니다. `tools/test_sfi_runtime.py`는 Unicorn으로 실제 링크된 검사 함수를 실행하는 호스트 테스트이며 별도 `unicorn` Python 패키지가 필요합니다. 이 추가 테스트 패키지는 CubeIDE 빌드나 보드 실행에 필요하지 않습니다.

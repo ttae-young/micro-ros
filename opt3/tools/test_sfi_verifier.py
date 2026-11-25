@@ -3,7 +3,7 @@ import sys,copy,tempfile,struct
 R=Path(__file__).resolve().parents[1];sys.path.insert(0,str(R/'tools'))
 from verify_worker import ELF,verify,branch_target
 from sfi_verify import decode,audit,APPS,HOOKS,verify_sfi
-path=Path(sys.argv[1]) if len(sys.argv)>1 else R/'Debug/freertos_app_sfi.elf';data=path.read_bytes();e=ELF(data)
+path=Path(sys.argv[1]) if len(sys.argv)>1 else R/'Debug/freertos_app_payload.elf';data=path.read_bytes();e=ELF(data)
 assert verify(data,elf_path=path)==3
 allowed={e.addr(n):n for n in APPS+HOOKS}
 ins=decode(e,path,'publisher_app_task');entry=e.addr('publisher_app_task')

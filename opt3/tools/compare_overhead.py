@@ -30,7 +30,9 @@ def parse(path):
     workload=re.search(r'\[WORKLOAD\] direct_read_each_iteration=([01]) same_apps=1',text)
     if not workload: raise ValueError('Missing workload identifier')
     revision=re.search(r'^\[FIX\] (.+)$',text,re.M)
-    return runs[0][:2],config.groups()+(tune.group(1).strip(),trim.group(1).strip(),workload.group(1))+((revision.group(1).strip() if revision else 'original'),),rows
+    payload=re.search(r'^\[PAYLOAD\] (.+)$',text,re.M)
+    payload_config=payload.group(1).strip() if payload else 'legacy-int32'
+    return runs[0][:2],config.groups()+(payload_config,)+(tune.group(1).strip(),trim.group(1).strip(),workload.group(1))+((revision.group(1).strip() if revision else 'original'),),rows
 
 def compare(a,b):
     ar,ac,av=parse(a); br,bc,bv=parse(b)

@@ -1,5 +1,5 @@
 param(
-    [string]$Firmware = (Join-Path $PSScriptRoot 'Debug/freertos_app_sfi.elf'),
+    [string]$Firmware = (Join-Path $PSScriptRoot 'Debug/freertos_app_payload.elf'),
     [string]$Python = "$env:USERPROFILE/pyocd-win/Scripts/python.exe",
     [string]$Programmer = ''
 )

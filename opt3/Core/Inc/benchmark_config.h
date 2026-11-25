@@ -55,7 +55,21 @@
 #if BENCH_VALIDATE_EACH_MESSAGE != 0
 #error "BENCH_VALIDATE_EACH_MESSAGE must be 0 in this revision"
 #endif
-#define BENCH_OBJECT_BYTES 32U
+/* Application data bytes, excluding ROS sequence metadata and transport framing. */
+#ifndef BENCH_PAYLOAD_BYTES
+#define BENCH_PAYLOAD_BYTES 64
+#endif
+#if BENCH_PAYLOAD_BYTES != 4 && BENCH_PAYLOAD_BYTES != 64 && BENCH_PAYLOAD_BYTES != 80 && BENCH_PAYLOAD_BYTES != 96
+#error "Choose 4, 64, 80 or 96 payload bytes"
+#endif
+#define BENCH_PAYLOAD_WORDS (BENCH_PAYLOAD_BYTES / 4U)
+#ifndef BENCH_CHECK_ALL_WORDS
+#define BENCH_CHECK_ALL_WORDS 1
+#endif
+#if BENCH_CHECK_ALL_WORDS != 0 && BENCH_CHECK_ALL_WORDS != 1
+#error "Choose first-word (0) or full payload verification (1)"
+#endif
+#define BENCH_OBJECT_BYTES 128U
 #define BENCH_ALLOC_BYTES 48U
 /* One publisher node + one node owning N independent subscriptions.
  * Bundled RMW: max subscriptions=5, shared receive history=4.

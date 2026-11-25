@@ -8,25 +8,25 @@ sys.path.insert(0,str(R/'tools'))
 from verify_worker import ELF
 from unicorn import *
 from unicorn.arm_const import *
-path=Path(sys.argv[1]) if len(sys.argv)>1 else R/'Debug/freertos_app_sfi.elf'
+path=Path(sys.argv[1]) if len(sys.argv)>1 else R/'Debug/freertos_app_payload.elf'
 data=path.read_bytes();e=ELF(data)
 assert struct.unpack('<I',e.read(e.addr('bench_policy_mode'),4))[0]==3
 def addr(n):return e.symbols[n][0]
 tested=0
 for who in range(5):
- own=0x20031000+who*32
+ own=0x20031000+who*128
  stack=addr('g_worker_stack') if who==0 else addr('g_sub_stacks')+(who-1)*4096
  tcb=addr('g_worker_tcb') if who==0 else addr('g_sub_tcbs')+(who-1)*(e.symbols['g_sub_tcbs'][1]//4)
- cases=[('own_word'+str(i),own+i*4,True,True) for i in range(8)]
+ cases=[('own_word'+str(i),own+i*4,True,True) for i in range(32)]
  cases += [('stack_data',stack+64,True,True),('active_frame',stack+4092,True,False)]
- cases += [('other_object'+str(i),0x20031000+i*32,False,False) for i in range(5) if i!=who]
+ cases += [('other_object'+str(i),0x20031000+i*128,False,False) for i in range(5) if i!=who]
  for peer in range(5):
   if peer!=who:
    other=addr('g_worker_stack') if peer==0 else addr('g_sub_stacks')+(peer-1)*4096
    cases.append(('other_stack'+str(peer),other+64,False,False))
  cases += [('kernel',addr('g_policy_canary'),False,False),('sfi_metadata',addr('g_probe'),False,False),
            ('null',0,False,False),('overflow',0xfffffffc,False,False),('unaligned',own+1,False,False),
-           ('boundary',own+31,False,False),('peripheral',0x40000000,False,False),('code',0x08000000,False,False),('forged_identity',own,False,False)]
+           ('boundary',own+127,False,False),('peripheral',0x40000000,False,False),('code',0x08000000,False,False),('forged_identity',own,False,False)]
  for name,target,read_ok,write_ok in cases:
   for write,allowed in ((False,read_ok),(True,write_ok)):
    c=Uc(UC_ARCH_ARM,UC_MODE_THUMB|UC_MODE_MCLASS)
@@ -37,7 +37,7 @@ for who in range(5):
    def put(a,v):c.mem_write(a,struct.pack('<I',v))
    def get(a):return struct.unpack('<I',c.mem_read(a,4))[0]
    put(addr('g_pub'),0x20031000)
-   for peer in range(4):put(addr('g_sub')+4*peer,0x20031020+peer*32)
+   for peer in range(4):put(addr('g_sub')+4*peer,0x20031080+peer*128)
    put(addr('g_active'),who);put(addr('pxCurrentTCB'),tcb+4 if name=='forged_identity' else tcb)
    put(addr('g_probe')+8,target);put(addr('g_probe')+24,tcb)
    if allowed:put(target,0x12345678)

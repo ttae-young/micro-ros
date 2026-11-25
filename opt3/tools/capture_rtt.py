@@ -31,7 +31,11 @@ def capture(elf):
     shutil.copyfile(path,logs/f'mode{mode}_latest.log')
     stage=re.search(rb'\[TUNE\] stage=(\d+)',path.read_bytes())
     workload=re.search(rb'\[WORKLOAD\] direct_read_each_iteration=([01])',path.read_bytes())
-    if workload: shutil.copyfile(path,logs/f'attack{workload.group(1).decode()}_mode{mode}_latest.log')
+    payload=re.search(rb'\[PAYLOAD\] bytes=(\d+) check_all=([01]) ',path.read_bytes())
+    if workload and payload:
+        size,check=(v.decode() for v in payload.groups())
+        direct=workload.group(1).decode()
+        shutil.copyfile(path,logs/f'payload{size}_check{check}_attack{direct}_mode{mode}_latest.log')
     if stage: shutil.copyfile(path,logs/f'stage{stage.group(1).decode()}_mode{mode}_latest.log')
     print('\nLog: '+str(path))
     return 0 if done else 1

@@ -533,7 +533,14 @@ static void run_one(bool measured)
     for (unsigned i=0; i<BENCH_SUBSCRIBERS; ++i)
         for (unsigned j=0; j<BENCH_PAYLOAD_WORDS; ++j)
             if (g_sub[i]->payload[j] != (uint32_t)g_sequence+j)
+            {
+                SEGGER_RTT_printf(0,"[PAYLOAD ERROR] measured=%u round=%lu sub=%u word=%u expected=%lu actual=%lu callback=%u status=%lu publish_errors=%lu timeouts=%lu spin_errors=%lu\n",
+                    (unsigned)measured, (unsigned long)g_sequence, i+1, j,
+                    (unsigned long)((uint32_t)g_sequence+j), (unsigned long)g_sub[i]->payload[j],
+                    (unsigned)g_rx_ready[i], (unsigned long)g_sub[i]->command,
+                    (unsigned long)g_publish_errors, (unsigned long)g_timeouts, (unsigned long)g_spin_errors);
                 fatal("payload word mismatch",i);
+            }
     vTaskDelay(pdMS_TO_TICKS(BENCH_PAUSE_MS));
 }
 static void report_stack_margin(void)

@@ -1,0 +1,161 @@
+[
+  {
+    "directory": "linorobot2-humble",
+    "repository": "linorobot/linorobot2_hardware",
+    "commit": "077cfee58d6f7b9fd376857b104158c1b3b696e3",
+    "files": [
+      {
+        "path": "LICENSE",
+        "blob": "261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64"
+      },
+      {
+        "path": "firmware/lib/kinematics/kinematics.cpp",
+        "blob": "c1e18189054c38abffbff4eada3477a8df5b0097"
+      },
+      {
+        "path": "firmware/lib/kinematics/kinematics.h",
+        "blob": "4ddeb358907bd33252854114d1e7f4381e82a678"
+      },
+      {
+        "path": "firmware/lib/odometry/odometry.cpp",
+        "blob": "396833ea3afd2021e6f14a84ae25b51f004f4a59"
+      },
+      {
+        "path": "firmware/lib/odometry/odometry.h",
+        "blob": "bd1d3c3d9f8a033a127ee00c4e239a764e7b1883"
+      },
+      {
+        "path": "firmware/lib/pid/pid.cpp",
+        "blob": "2a3ef81a8a5254b72b53837ec38d7351a32aed61"
+      },
+      {
+        "path": "firmware/lib/pid/pid.h",
+        "blob": "12fb893f7c02bb424f3dfdbcc68f1e60c23cbfe3"
+      },
+      {
+        "path": "firmware/src/firmware.ino",
+        "blob": "42ffd9b0bde8a22c86046d414e76f96972880cfb"
+      }
+    ]
+  },
+  {
+    "directory": "leo-rover",
+    "repository": "LeoRover/leocore_firmware_ros2",
+    "commit": "5813a352ae34e2fd1e99268683885f605d88cee1",
+    "files": [
+      {
+        "path": "App/Inc/app/motor_controller.hpp",
+        "blob": "25de4cec6ea02fe7c472e77e9abb12374f99a621"
+      },
+      {
+        "path": "App/Src/app.cpp",
+        "blob": "d7eacad87fe9ff95f172db64072fddb46d2e06a9"
+      },
+      {
+        "path": "App/Src/motor_controller.cpp",
+        "blob": "ad179665b865e5326e16b7ad7fe4f547c6bfe1b2"
+      },
+      {
+        "path": "LICENSE",
+        "blob": "d696e0f57fcde740905e99ae829a998ec59975b8"
+      }
+    ]
+  },
+  {
+    "directory": "analog-devices",
+    "repository": "analogdevicesinc/zephyr-micro-ros-apps",
+    "commit": "5c891cc043acfda70e5656f2220eb5b04ad7985e",
+    "files": [
+      {
+        "path": "LICENSE",
+        "blob": "261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64"
+      },
+      {
+        "path": "apps/dac-dt-sub/src/main.c",
+        "blob": "c45217dc08ec24becec2cdcf4e3ccfaa3e9e1e23"
+      },
+      {
+        "path": "apps/sensor-pub/src/main.c",
+        "blob": "e0095db704c07d01a3cfbbd6ffa6f7a2162f7f2d"
+      }
+    ]
+  },
+  {
+    "directory": "microros-zephyr",
+    "repository": "micro-ROS/zephyr_apps",
+    "commit": "11855d373b7829dbafbb91a641830f5185709d73",
+    "files": [
+      {
+        "path": "3rd-party-licenses.txt",
+        "blob": "8e21e87760da7b93e4b2272104e26e3edb6eccb1"
+      },
+      {
+        "path": "LICENSE",
+        "blob": "d645695673349e3947e8e5ae42332d0ac3164cd7"
+      },
+      {
+        "path": "NOTICE",
+        "blob": "699e0c758bacc02d5a7a005098f9e0cc9ff33bbd"
+      },
+      {
+        "path": "apps/attitude_estimator/src/main.c",
+        "blob": "2e26e8317f0cb6a67aae73519cf7ca099175b312"
+      },
+      {
+        "path": "apps/attitude_estimator/src/sensfusion9.c",
+        "blob": "322d469eb60d5beb33b691d990ad7a767406889f"
+      },
+      {
+        "path": "apps/attitude_estimator/src/sensfusion9.h",
+        "blob": "6a35dfd925610db8376f8537e1c638af222faa00"
+      },
+      {
+        "path": "apps/sensors_publisher/src/main.c",
+        "blob": "bd146093c0790a2d5a17ca7a892dac09dab07442"
+      }
+    ]
+  },
+  {
+    "directory": "leo-rover-diff-drive",
+    "repository": "fictionlab/diff_drive_lib",
+    "commit": "82496664dc3a7d7633f29d1ae659c6d0f4ae27c6",
+    "files": [
+      {
+        "path": "LICENSE",
+        "blob": "d696e0f57fcde740905e99ae829a998ec59975b8"
+      },
+      {
+        "path": "include/diff_drive_lib/circular_buffer.hpp",
+        "blob": "4ee2dcdfae52b9823756fa9f11b060fd905723d4"
+      },
+      {
+        "path": "include/diff_drive_lib/diff_drive_controller.hpp",
+        "blob": "9043da8b19baf9fabbbc7cb06375a76d3f7e2fac"
+      },
+      {
+        "path": "include/diff_drive_lib/mecanum_controller.hpp",
+        "blob": "d3bfdadd079dbcd2230e2c1be69d02c56e1f0c4b"
+      },
+      {
+        "path": "include/diff_drive_lib/motor_controller_interface.hpp",
+        "blob": "d7c2b81588d44f102d31b809de530e5bbccea61b"
+      },
+      {
+        "path": "include/diff_drive_lib/pid_regulator.hpp",
+        "blob": "23ae5d2e125c147be2a412dd877ac8d6fd9cda83"
+      },
+      {
+        "path": "include/diff_drive_lib/robot_controller.hpp",
+        "blob": "b2e563404a0dd8eb006e1a1279fcfcc24960be85"
+      },
+      {
+        "path": "include/diff_drive_lib/utils.hpp",
+        "blob": "6d20ad8ed92f160eb25be480820517a7e04d4cc9"
+      },
+      {
+        "path": "include/diff_drive_lib/wheel_controller.hpp",
+        "blob": "b2edf694a22fed27298c7c810371831aa8f55138"
+      }
+    ]
+  }
+]
